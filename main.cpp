@@ -1,6 +1,7 @@
 #include "mmu.h"
 #include "cartridge.h"
 #include "cpu.h"
+#include "ppu.h"
 
 int main() {
 

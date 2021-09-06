@@ -42,7 +42,9 @@ void ppu::render_line() {
 
 void ppu::update_graphics() {
 
-    if(get_ldc_display_enable()) {
+    set_lcd_status();
+
+    if(get_lcd_display_enable()) {
         clock_count -= cp->last_clock;
     }
     else {
@@ -72,13 +74,78 @@ void ppu::update_graphics() {
 };
 
 
+void ppu::set_lcd_status() {
+
+    if(!get_lcd_display_enable()) {
+        // set the mode to 1 during lcd disabled and reset scanline
+        clock_count = 456;
+        *line = 0;
+        *lcd_status &= 252; 
+        set_mode(1);
+        return;
+    }
+
+    byte currentmode = get_mode();
+
+    byte mode = 0;
+    bool request_interrupt = false;
+
+    // in vblank so set mode to 1
+    if(*line >= 144) {
+        mode = 1;
+        set_mode(1);
+        request_interrupt = *lcd_status & 0x10;
+    } 
+    else {
+        int mode2bounds = 456-80;
+        int mode3bounds = mode2bounds - 172;
+
+        // mode 2
+        if(clock_count >= mode2bounds) {
+            mode = 2;
+            set_mode(2);
+            request_interrupt = *lcd_status & 0x20;
+        }
+        // mode 3
+        else if(clock_count >= mode3bounds) {
+            mode = 3;
+            set_mode(3);
+        }
+        // mode 0
+        else {
+            mode = 0;
+            set_mode(0);
+            request_interrupt = *lcd_status & 0x08;
+        }
+    }
+
+    // just entered a new mode so request interupt
+    if (request_interrupt && (mode != currentmode))
+        ; // TODO: RequestInterupt(1)
+
+    // check the coincidence flag
+    if (*line == memory->address[0xFF45]) {
+        *lcd_status |= 0x04;
+        if(*lcd_status & 0x40) // bit 6
+            ; // TODO: RequestInterupt(1)
+    }
+    else {
+        *lcd_status &= ~0x04;
+    }
+};
 
 
 
 
+void ppu::set_mode(int mode) {
+    *lcd_status = ((*lcd_status & 252) | mode);
+};
 
+byte ppu::get_mode() {
+    return *lcd_status & 3;
+};
 
-void ppu::set_ldc_display_enable(bool status) {
+void ppu::set_lcd_display_enable(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 7)) | (status << 7);
 };
 void ppu::set_wnd_tile_map_select(bool status) {
@@ -110,7 +177,7 @@ void ppu::set_bg_display(bool status) {
 };
 
 
-bool ppu::get_ldc_display_enable() {
+bool ppu::get_lcd_display_enable() {
     return *lcd_control & 0x80;
 };
 bool ppu::get_wnd_tile_map_select() {

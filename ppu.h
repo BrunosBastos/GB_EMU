@@ -40,8 +40,11 @@ class ppu {
         void update_graphics();
         void render_line();
 
+        void set_lcd_status();
+        void set_mode(int mode);
+        byte get_mode();
 
-        void set_ldc_display_enable(bool status);
+        void set_lcd_display_enable(bool status);
         void set_wnd_tile_map_select(bool status);
         void set_wnd_display_enable(bool status);
         void set_bg_wnd_tile_data_select(bool status);
@@ -50,7 +53,7 @@ class ppu {
         void set_obj_display_enable(bool status);
         void set_bg_display(bool status);
 
-        bool get_ldc_display_enable();
+        bool get_lcd_display_enable();
         bool get_wnd_tile_map_select();
         bool get_wnd_display_enable();
         bool get_bg_wnd_tile_data_select();
