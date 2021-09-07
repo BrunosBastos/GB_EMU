@@ -11,6 +11,11 @@
 #define MODE_OAM  2
 #define MODE_VRAM 3
 
+#define WHITE 0
+#define L_GRAY 1
+#define D_GRAY 2
+#define BLACK 3
+
 
 
 class ppu {
@@ -39,6 +44,9 @@ class ppu {
         void initialize(mmu* memory, cpu* cp);
         void update_graphics();
         void render_line();
+        void render_sprites();
+        void render_tiles();
+        void get_color();
 
         void set_lcd_status();
         void set_mode(int mode);
