@@ -1,6 +1,7 @@
 
 #include <stdio.h>
-#include "cpu.h"
+#include "opcodes.h"
+
 
 void cpu::initialize(mmu* mmu) {
 
@@ -16,7 +17,8 @@ void cpu::emulate_cycle() {
     opcode = memory->address[pc];
 
     // decode and execute op
-
+    if(pc == 0x38)
+        exit(0);
     execute_opcode();
 
     pc += 1;
@@ -30,27 +32,8 @@ void cpu::emulate_cycle() {
 void cpu::execute_opcode() {
     printf("opcode: %02x \n", opcode);
 
-    if(true) {
-        //cb
-        if(opcode >= 0xC0) {
-            set_r1(opcode & 0x07, opcode & 0x38);
-        }
-        else if(opcode < 0xC0 && opcode >= 0x80) {
-            res_r1(opcode & 0x07, opcode & 0x38);
-        }
-        else if(opcode < 0x80 && opcode >= 0x40) {
-            bit_r1(opcode & 0x07, opcode & 0x38);
-        }
-        else {
-            (this->*optable_cb[opcode])();
-            
-            // opfunc_t* opfunc = &optable[op];
-            // (*opfunc->func)(cpu, mmu);
-        }
-    }
-    else{
-        (this->*optable[opcode])();
-    }
+    printf("%p\n",*optable[opcode]);
+    (*optable[opcode])(memory, this);
 }
 
 

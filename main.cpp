@@ -4,6 +4,7 @@
 #include "cpu.h"
 #include "mmu.h"
 #include "ppu.h"
+#include "opcodes.h"
 
 SDL_Renderer *renderer;
 
@@ -40,6 +41,8 @@ void update_screen(ppu *p) {
 int main() {
     sdl_init();
     SDL_Event event;
+
+    initialize_optable();
 
     cartridge *c = new cartridge();
     c->cartridge_load("./roms/tetris.gb");

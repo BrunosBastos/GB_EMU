@@ -1,12 +1,17 @@
+
+#ifndef _OPCODES_H_
+#define _OPCODES_H_
+
 #include "types.h"
 #include "cpu.h"
 #include "mmu.h"
 
-
-void(*optable[0xFF])(mmu* memory, cpu* cp);
-void(*optable_cb[0xBF])(mmu* memory, cpu* cp);
-byte *cycle_table[0xFF];
-byte *cycle_table_cb[0xBF];
+void initialize_optable();
+void initialize_optable_cb();
+extern void(*optable[0xFF])(mmu* memory, cpu* cp);
+extern void(*optable_cb[0xBF])(mmu* memory, cpu* cp);
+extern byte cycle_table[0xFF];
+extern byte cycle_table_cb[0xBF];
 
 
 void op_00(mmu* memory, cpu* cp);
@@ -484,3 +489,5 @@ void op_CB_BC(mmu* memory, cpu* cp);
 void op_CB_BD(mmu* memory, cpu* cp);
 void op_CB_BE(mmu* memory, cpu* cp);
 void op_CB_BF(mmu* memory, cpu* cp);
+
+#endif

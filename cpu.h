@@ -3,7 +3,6 @@
 
 #include "mmu.h"
 
-
 #define A 0
 #define F 1
 #define B 2
@@ -20,8 +19,6 @@ class cpu {
     public:
 
         void initialize(mmu* mmu);
-        void(cpu:: *optable[0xFF])();
-        void(cpu:: *optable_cb[0xBF])();
         mmu *memory;                // pointer to the memory object
         word pc;
         word opcode;
