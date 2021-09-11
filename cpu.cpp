@@ -15,10 +15,9 @@ void cpu::emulate_cycle() {
     // get opcode
 
     opcode = memory->address[pc];
+    last_clock = cycle_table[opcode];
 
     // decode and execute op
-    if(pc == 0x38)
-        exit(0);
     execute_opcode();
 
     pc += 1;
@@ -31,8 +30,7 @@ void cpu::emulate_cycle() {
 
 void cpu::execute_opcode() {
     printf("opcode: %02x \n", opcode);
-
-    printf("%p\n",*optable[opcode]);
+    
     (*optable[opcode])(memory, this);
 }
 
@@ -59,36 +57,46 @@ void cpu::subc_a_pc() {
 };
 
 void cpu::add_hl_r16(byte r16) {
-
-    unsigned short res = 
+    // FIXME: 
+    word res = 
         add16(registers[H] | (registers[L] << 8), registers[r16] | (registers[r16 + 1] << 8));
 
-    registers[H] = 0xFF;
-    registers[L] = 0xFF00 >> 8;
+    registers[H] = res & 0xFF;
+    registers[L] = (res & 0xFF00) >> 8;
 };
 
 void cpu::add_hl_sp() {
     
-    unsigned short res = 
+    word res = 
         add16(registers[H] | (registers[L] << 8), sp);
 
     registers[H] = res & 0xFF;
-    registers[L] = (res & 0xFF00) >> 8;    
+    registers[L] = (res & 0xFF00) >> 8;
 };
 
 void cpu::add_sp_pc() {
-    // TODO: mal
-    sp = add16(sp, memory->address[pc]);
+    char n = memory->address[++pc];
+
+    set_z_flag(0);
+    set_n_flag(0);    
+    if(n < 0) {
+        set_c_flag(0);  // FIXME:_ foi feito a sorte
+        set_h_flag(0);
+    } else {
+        set_c_flag(1);
+        set_h_flag(1);        
+    }
+    sp += n;    
 };
 
 void cpu::inc_r16(byte r16) {
-    unsigned short res = inc16(registers[r16] | (registers[r16 + 1] << 8));
+    word res = inc16(registers[r16] | (registers[r16 + 1] << 8));
     registers[r16] = res & 0xFF;
     registers[r16 + 1] = (res & 0xFF00) >> 8;    
 };
 
 void cpu::dec_r16(byte r16) {
-    unsigned short res = dec16(registers[r16] | (registers[r16 + 1] << 8));
+    word res = dec16(registers[r16] | (registers[r16 + 1] << 8));
     registers[r16] = res & 0xFF;
     registers[r16 + 1] = (res & 0xFF00) >> 8;    
 };
@@ -232,7 +240,6 @@ void cpu::srl_r1(byte r1) {
 
     set_n_flag(0);
     set_h_flag(0);
-
     if(registers[r1] & 0x01) 
         set_c_flag(1);
     else
@@ -264,7 +271,7 @@ void cpu::res_r1(byte r1, byte bit) {
 
 void cpu::call_cc_nn(byte cc) {
 
-    unsigned short nn = memory->address[memory->address[++pc] | (memory->address[++pc] << 8)];
+    word nn = memory->address[memory->address[++pc] | (memory->address[++pc] << 8)];
 
     if(cc == 0 && !get_z_flag()) {
         stack[--sp] = pc;
@@ -322,7 +329,6 @@ byte cpu::add8(byte op1, byte op2) {
 };
 
 byte cpu::sub8(byte op1, byte op2) {
-
     set_n_flag(1);
 
     byte res = op1 - op2;
@@ -400,7 +406,7 @@ byte cpu::inc8(byte op1) {
 
     if(res == 0) set_z_flag(1);
 
-    if(op1 & 0x0F) set_h_flag(1);
+    if((op1 & 0x0F) == 0x0F) set_h_flag(1);
 
     return res;
 };
@@ -419,7 +425,7 @@ byte cpu::dec8(byte op1) {
 };
 
 
-unsigned short cpu::add16(unsigned short op1, unsigned short op2) {
+word cpu::add16(word op1, word op2) {
     // this operation uses the values of the registers and not the addresses
 
     set_n_flag(0);
@@ -431,12 +437,12 @@ unsigned short cpu::add16(unsigned short op1, unsigned short op2) {
     return op1 + op2;
 };
 
-unsigned short cpu::inc16(unsigned short op1) {
+word cpu::inc16(word op1) {
     // no flags are affected making this function kinda useless
     return op1 + 1;
 };
 
-unsigned short cpu::dec16(unsigned short op1) {
+word cpu::dec16(word op1) {
     // no flags are affected making this function kinda useless
     return op1 - 1;
 };

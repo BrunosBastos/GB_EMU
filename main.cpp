@@ -55,7 +55,8 @@ int main() {
     p->initialize(m, cp);
 
     bool running = true;
-    while (running) {
+    //while (running) {
+    for(int i=0; i < 20; i++) {
         cp->emulate_cycle();
         p->update_graphics();
         update_screen(p);

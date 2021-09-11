@@ -24,6 +24,7 @@ void initialize_optable() {
     optable[0x0E] = &op_0E; cycle_table[0x0E] = 4;
     optable[0x0F] = &op_0F; cycle_table[0x0F] = 4;
 
+    optable[0x10] = &op_10; cycle_table[0x10] = 4;
     optable[0x11] = &op_11; cycle_table[0x11] = 4;
     optable[0x12] = &op_12; cycle_table[0x12] = 4;
     optable[0x13] = &op_13; cycle_table[0x13] = 4;
@@ -213,20 +214,21 @@ void initialize_optable() {
     optable[0xC0] = &op_C0; cycle_table[0xC0] = 4;
     optable[0xC1] = &op_C1; cycle_table[0xC1] = 4;
     optable[0xC2] = &op_C2; cycle_table[0xC2] = 4;
-    optable[0xC3] = &op_C3; cycle_table[0xC3] = 4;
+    optable[0xC3] = &op_C3; cycle_table[0xC3] = 12;
     optable[0xC5] = &op_C5; cycle_table[0xC5] = 4;
     optable[0xC6] = &op_C6; cycle_table[0xC6] = 4;
     optable[0xC7] = &op_C7; cycle_table[0xC7] = 4;
     optable[0xC8] = &op_C8; cycle_table[0xC8] = 4;
     optable[0xC9] = &op_C9; cycle_table[0xC9] = 4;
     optable[0xCA] = &op_CA; cycle_table[0xCA] = 4;
-    optable[0xCD] = &op_CD; cycle_table[0xCD] = 4;
+    optable[0xCD] = &op_CD; cycle_table[0xCD] = 12;
     optable[0xCF] = &op_CF; cycle_table[0xCF] = 4;
 
     optable[0xD0] = &op_D0; cycle_table[0xD0] = 4;
     optable[0xD1] = &op_D1; cycle_table[0xD1] = 4;
     optable[0xD2] = &op_D2; cycle_table[0xD2] = 4;
     optable[0xD5] = &op_D5; cycle_table[0xD5] = 4;
+    optable[0xD6] = &op_D6; cycle_table[0xD5] = 4;
     optable[0xD7] = &op_D7; cycle_table[0xD7] = 4;
     optable[0xD8] = &op_D8; cycle_table[0xD8] = 4;
     optable[0xD9] = &op_D9; cycle_table[0xD9] = 4;
@@ -344,6 +346,7 @@ void op_01(mmu* memory, cpu* cp) {
 };
 
 void op_02(mmu* memory, cpu* cp) {
+    // FIXME: not sure, seems fine, o gajo deve ter diferente
     memory->address[cp->registers[B] | (cp->registers[C] << 8)] = cp->registers[A];
 };
 
@@ -397,6 +400,10 @@ void op_0E(mmu* memory, cpu* cp) {
 
 void op_0F(mmu* memory, cpu* cp) {
 
+};
+
+void op_10(mmu* memory, cpu* cp) {
+    // TODO: STOP
 };
 
 void op_11(mmu* memory, cpu* cp) {
@@ -462,7 +469,7 @@ void op_1F(mmu* memory, cpu* cp) {
 
 void op_20(mmu* memory, cpu* cp) {
     if(!cp->get_z_flag()) 
-        cp->pc += memory->address[++cp->pc];
+        cp->pc += memory->address[++cp->pc] - 1;    // FIXME: no idea
 };
 
 void op_21(mmu* memory, cpu* cp) {
@@ -1144,11 +1151,11 @@ void op_C2(mmu* memory, cpu* cp) {
 };
 
 void op_C3(mmu* memory, cpu* cp) {
-    cp->pc = memory->address[memory->address[++cp->pc] | (memory->address[++cp->pc] << 8)];
+    cp->pc = memory->address[++cp->pc] | (memory->address[++cp->pc] << 8);
 };
 
 void op_C4(mmu* memory, cpu* cp) {
-    // TODO:
+    // FIXME: pode ser para saltar o address ou para o valor nn
     unsigned short nn = memory->address[memory->address[++cp->pc] | (memory->address[++cp->pc] << 8)];
 
     if(!cp->get_z_flag()) {
@@ -1196,8 +1203,8 @@ void op_CC(mmu* memory, cpu* cp) {
 }
 
 void op_CD(mmu* memory, cpu* cp) {
-    // TODO: cp->pc value that is pushed to the cp->stack might be wrong because of the order
-    unsigned short nn = memory->address[memory->address[++cp->pc] | (memory->address[++cp->pc] << 8)];
+
+    unsigned short nn = memory->address[++cp->pc] | (memory->address[++cp->pc] << 8);
     cp->stack[--cp->sp] = cp->pc;
     cp->pc = nn;
 };
@@ -1308,7 +1315,7 @@ void op_E7(mmu* memory, cpu* cp) {
 };
 
 void op_E8(mmu* memory, cpu* cp) {
-
+    cp->add_sp_pc();
 };
 
 void op_E9(mmu* memory, cpu* cp) {
@@ -1389,6 +1396,7 @@ void op_FF(mmu* memory, cpu* cp) {
 void op_CB(mmu* memory, cpu* cp) {
     // TODO:
     int opcode = memory->address[++(cp->pc)];
+    printf("cb::: %02x\n", opcode);
 
     if(opcode >= 0xC0) {
         cp->set_r1(opcode & 0x07, opcode & 0x38);
@@ -1400,6 +1408,7 @@ void op_CB(mmu* memory, cpu* cp) {
         cp->bit_r1(opcode & 0x07, opcode & 0x38);
     }
     else {
+        printf("fdofjo\n");
         (*optable_cb[opcode])(memory, cp);
     }
 
