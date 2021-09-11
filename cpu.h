@@ -3,12 +3,16 @@
 
 #include "mmu.h"
 
-enum registers: int {
-    A, F, 
-    B, C, 
-    D, E, 
-    H, L,
-};
+
+#define A 0
+#define F 1
+#define B 2
+#define C 3
+#define D 4
+#define E 5
+#define H 6
+#define L 7
+
 
 
 class cpu {
