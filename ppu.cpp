@@ -38,7 +38,6 @@ void ppu::render_line() {
 void ppu::update_graphics() {
     set_lcd_status();
 
-    printf("last_clock : %i\n", cp->last_clock);
     if (get_lcd_display_enable()) {
         clock_count -= cp->last_clock;
     } else {

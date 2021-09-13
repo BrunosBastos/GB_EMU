@@ -5,15 +5,16 @@
 
 void cpu::initialize(mmu* mmu) {
 
-    pc = 0x100; // pag 63
+    pc = 0x100;
     memory = mmu;
-
+    //sp = 0xFFFF;        // TODO: check this later
+    interrupt_master = true;
+    pending_interrupt_disabled = false;
+    pending_interrupt_enabled = false;
 }
 
 void cpu::emulate_cycle() {
-
     // get opcode
-
     opcode = memory->address[pc];
     last_clock = cycle_table[opcode];
 
@@ -22,37 +23,84 @@ void cpu::emulate_cycle() {
 
     pc += 1;
 
-}
+    if(pending_interrupt_disabled) {
+        if(memory->address[pc-1] != 0xF3) {
+            interrupt_master = false;
+            pending_interrupt_disabled = false;
+        }
+    }
+    if(pending_interrupt_enabled) {
+        if(memory->address[pc-1] != 0xFB) {
+			interrupt_master = true;
+            pending_interrupt_enabled = false;
+        }
+    }
 
-
-//optable[0xCB] = &cpu::CB;  FIXME:
-
+};
 
 void cpu::execute_opcode() {
-    printf("opcode: %02x \n", opcode);
+    debug();
     
     (*optable[opcode])(memory, this);
+};
+
+void cpu::debug() {
+    printf("pc: %04x  opcode: %02x  sp: %04x\n", pc, opcode, sp);
+    printf("a: %02x  f: %02x\n", registers[A], registers[F]);
+    printf("b: %02x  c: %02x\n", registers[B], registers[C]);
+    printf("d: %02x  e: %02x\n", registers[D], registers[E]);
+    printf("h: %02x  l: %02x\n", registers[H], registers[L]);
+    printf("\n");
+};
+
+void cpu::request_interrupt(int id) {
+    memory->address[0xFF0F] |= (1 << id);
+};
+
+void cpu::execute_interrupts() {
+
+    if(interrupt_master) {
+
+        byte req = memory->address[0xFF0F];
+        byte enabled = memory->address[memory->ief];
+
+        if(req & 0xFF) {
+            // check if any of the bits is 1
+            for(int i=0; i <= 4; i++) {
+
+                // check if the bit is set and if so check if it is
+                // enabled in the other flag
+                if((req & (1 << i)) && (enabled & (1 << i))) {
+                    // FIXME: does this need a break?
+                    service_interrupt(i);                    
+                }
+            }
+        } 
+    }
+};
+
+void cpu::service_interrupt(int id) {
+
+    // master interrupt and the bit of the current interrupt are reset
+    interrupt_master = false;
+    memory->address[0xFF0F] &= ~(1 << id);
+
+    stack[--sp] = pc;
+    
+    switch(id) { 
+        case 0: pc = 0x40 ; break ;
+        case 1: pc = 0x48 ; break ;
+        case 2: pc = 0x50 ; break ;
+        case 4: pc = 0x60 ; break ;
+    }
 }
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-
-
-void cpu::pop_nn(byte r16) {
-    // TODO: not sure about the order
-    
-};
 
 
 void cpu::subc_a_pc() {
-    // TODO:: n tem sitio xD
+    // TODO:: this is not used?? 
     registers[A] = sub8(registers[A], memory->address[pc] + get_c_flag());
 };
 
@@ -256,15 +304,42 @@ void cpu::bit_r1(byte r1, byte bit) {
     set_n_flag(0);
     set_h_flag(1); 
 
-    if(!(registers[r1] & (1 << bit))) set_z_flag(1);
+    bool n = true;
+    if(r1== 6) {
+        // FIXME: not sure if the its the addr or the values of reg
+        last_clock = 16;
+        n = (memory->address[registers[H] | (registers[L] << 8)]) & (1 << bit); 
+    } else if(r1== 7) {
+        n = registers[A] & (1 << bit);
+    } else {
+        n = registers[r1 + 2] & (1 << bit);
+    }
+
+    if(!n) set_z_flag(1);
 };
 
 void cpu::set_r1(byte r1, byte bit) {
-    registers[r1] |= (1 << bit);
+    if(r1== 6) {
+        // FIXME: not sure if the its the addr or the values of reg
+        last_clock = 16;
+        memory->address[registers[H] | (registers[L] << 8)] |= (1 << bit); 
+    } else if(r1== 7) {
+        registers[A] |= (1 << bit);
+    } else {
+        registers[r1+ 2] |= (1 << bit);
+    }
 };
 
 void cpu::res_r1(byte r1, byte bit) {
-    registers[r1] &= ~(1 << bit);
+    if(r1== 6) {
+        // FIXME: not sure if the its the addr or the values of reg
+        last_clock = 16;
+        memory->address[registers[H] | (registers[L] << 8)] &= ~(1 << bit); 
+    } else if(r1== 7) {
+        registers[A] &= ~(1 << bit);
+    } else {
+        registers[r1 + 2] &= ~(1 << bit);
+    }
 };
 
 
@@ -419,7 +494,7 @@ byte cpu::dec8(byte op1) {
 
     if(res == 0) set_z_flag(1);
 
-    if((res & 0x0F) == 0x0F) set_c_flag(1);      // not sure
+    if((res & 0x0F) == 0x0F) set_h_flag(1);
 
     return res;
 };

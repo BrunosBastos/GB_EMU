@@ -8,6 +8,8 @@
 
 SDL_Renderer *renderer;
 
+#define debug 0
+
 void sdl_init() {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window =
@@ -55,17 +57,27 @@ int main() {
     p->initialize(m, cp);
 
     bool running = true;
-    //while (running) {
-    for(int i=0; i < 20; i++) {
+    while (running) {
+    //for(int i=0; i < 200; i++) {
+        //printf("--------- %i ---------\n", i);
         cp->emulate_cycle();
         p->update_graphics();
         update_screen(p);
+        cp->execute_interrupts();
         int startMs = SDL_GetTicks();
 
-        // if(draw && myChip8.drawFlag) {
-        //    drawGraphics();
-        //}
-
+        char str[7];
+        while(debug) {
+            scanf("%s", str);                 
+            if (strcmp("c", str) == 0) {
+                break;
+            } else if(strcmp("e", str) == 0) {
+                exit(0);
+            } else {
+                printf("[%04s]: %02x\n", str, m->address[strtol(str, NULL, 16)]);
+            }
+        }
+    
         while (SDL_PollEvent(&event)) {  // poll until all events are handled!
             if (event.type == SDL_QUIT) {
                 running = false;
@@ -73,7 +85,7 @@ int main() {
         }
 
         int endMs = SDL_GetTicks();
-        SDL_Delay(10 - (endMs - startMs));
+        SDL_Delay(60 - (endMs - startMs));
     }
 
     return 0;

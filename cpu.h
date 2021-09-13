@@ -29,14 +29,22 @@ class cpu {
         byte registers[8];          // A-F B-C D-E H-L
 
         word sp;
-        word stack[64];   // TODO: check if the size of the stack is correct
+        byte stack[0x10000];
 
+        bool interrupt_master;
+        bool pending_interrupt_disabled;
+        bool pending_interrupt_enabled;
 
         void emulate_cycle();
         void execute_opcode();
 
         void cpu_init_table();
         void cpu_init_table_cb();
+
+        void debug();
+        void request_interrupt(int id);
+        void execute_interrupts();
+        void service_interrupt(int id);
 
         void ld_nn_n(byte reg);
         void ld_r1_r2(byte r1, byte r2);

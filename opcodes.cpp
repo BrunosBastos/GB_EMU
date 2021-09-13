@@ -479,7 +479,7 @@ void op_1F(mmu* memory, cpu* cp) {
 void op_20(mmu* memory, cpu* cp) {
     cp->pc++;
     if(!cp->get_z_flag()) { 
-        cp->pc += memory->address[cp->pc] - 1;    // FIXME: no idea
+        cp->pc += memory->address[cp->pc] - 1;
     }
 };
 
@@ -555,8 +555,9 @@ void op_2F(mmu* memory, cpu* cp) {
 };
 
 void op_30(mmu* memory, cpu* cp) {
+    cp->pc++;
     if(!cp->get_c_flag()) 
-        cp->pc += memory->address[++cp->pc];
+        cp->pc += memory->address[cp->pc];
 };
 
 void op_31(mmu* memory, cpu* cp) {
@@ -564,7 +565,7 @@ void op_31(mmu* memory, cpu* cp) {
 };
 
 void op_32(mmu* memory, cpu* cp) {
-    unsigned short hl = cp->registers[H] | (cp->registers[L] << 8);
+    word hl = cp->registers[H] | (cp->registers[L] << 8);
     memory->address[hl--] = cp->registers[A];
     cp->registers[H] = hl & 0x00FF;
     cp->registers[L] = (hl & 0xFF00) >> 8;
@@ -1195,7 +1196,7 @@ void op_C8(mmu* memory, cpu* cp) {
 };
 
 void op_C9(mmu* memory, cpu* cp) {
-    cp->pc = cp->stack[cp->sp++];
+    cp->pc = (cp->stack[cp->sp++] << 8) | cp->stack[cp->sp++];  
 };
 
 void op_CA(mmu* memory, cpu* cp) {
@@ -1216,8 +1217,9 @@ void op_CC(mmu* memory, cpu* cp) {
 void op_CD(mmu* memory, cpu* cp) {
 
     unsigned short nn = memory->address[++cp->pc] | (memory->address[++cp->pc] << 8);
-    cp->stack[--cp->sp] = cp->pc;
-    cp->pc = nn;
+    cp->stack[--cp->sp] = cp->pc & 0xFF;
+    cp->stack[--cp->sp] = (cp->pc & 0xFF00) >> 8;
+    cp->pc = nn - 1;
 };
 
 void op_CE(mmu* memory, cpu* cp) {
@@ -1275,7 +1277,8 @@ void op_D8(mmu* memory, cpu* cp) {
 
 void op_D9(mmu* memory, cpu* cp) {
     // TODO: enable interrupts
-    cp->pc = cp->stack[cp->sp++];
+    cp->pc = (cp->stack[cp->sp++] << 8) | cp->stack[cp->sp++];
+    cp->interrupt_master = true;
 };
 
 void op_DA(mmu* memory, cpu* cp) {
@@ -1317,7 +1320,7 @@ void op_E5(mmu* memory, cpu* cp) {
 };
 
 void op_E6(mmu* memory, cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], memory->address[cp->pc]);
+    cp->registers[A] = cp->and8(cp->registers[A], memory->address[++cp->pc]);
 };
 
 void op_E7(mmu* memory, cpu* cp) {
@@ -1330,7 +1333,7 @@ void op_E8(mmu* memory, cpu* cp) {
 };
 
 void op_E9(mmu* memory, cpu* cp) {
-    cp->pc = cp->registers[H] | (cp->registers[L] << 8);
+    cp->pc = (cp->registers[H] | (cp->registers[L] << 8)) - 1;
 };
 
 void op_EA(mmu* memory, cpu* cp) {
@@ -1343,7 +1346,7 @@ void op_EE(mmu* memory, cpu* cp) {
 
 void op_EF(mmu* memory, cpu* cp) {
     cp->stack[--cp->sp] = cp->pc;
-    cp->pc = 0x28;
+    cp->pc = 0x28 - 1;
 };
 
 void op_F0(mmu* memory, cpu* cp) {
@@ -1360,7 +1363,8 @@ void op_F2(mmu* memory, cpu* cp) {
 };
 
 void op_F3(mmu* memory, cpu* cp) {
-
+    // TODO: DI the interrupt should only be disable after the next instruction
+    cp->pending_interrupt_disabled = true;
 };
 
 void op_F5(mmu* memory, cpu* cp) {
@@ -1392,7 +1396,8 @@ void op_FA(mmu* memory, cpu* cp) {
 };
 
 void op_FB(mmu* memory, cpu* cp) {
-
+    // TODO: EI the interrupt should only be enable after the next instruction
+    cp->pending_interrupt_enabled = true;
 };
 
 void op_FE(mmu* memory, cpu* cp) {
@@ -1400,7 +1405,7 @@ void op_FE(mmu* memory, cpu* cp) {
 };
 
 void op_FF(mmu* memory, cpu* cp) {
-    cp->stack[--(cp->sp)] = cp->pc;
+    cp->stack[--cp->sp] = cp->pc;
     cp->pc = 0x38;
 };
 
@@ -1408,9 +1413,12 @@ void op_CB(mmu* memory, cpu* cp) {
     // TODO:
     int opcode = memory->address[++(cp->pc)];
     printf("cb::: %02x\n", opcode);
-
+    
+    byte reg = opcode & 0x07;
+    byte bit = opcode & 0x38;
+    cp->last_clock = 8;
+    
     if(opcode >= 0xC0) {
-        // FIXME: does not work for r16
         cp->set_r1(opcode & 0x07, opcode & 0x38);
     }
     else if(opcode < 0xC0 && opcode >= 0x80) {
@@ -1420,8 +1428,8 @@ void op_CB(mmu* memory, cpu* cp) {
         cp->bit_r1(opcode & 0x07, opcode & 0x38);
     }
     else {
-        printf("fdofjo\n");
         (*optable_cb[opcode])(memory, cp);
+        cp->last_clock = cycle_table_cb[opcode];
     }
 
 };
