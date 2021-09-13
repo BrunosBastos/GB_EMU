@@ -25,16 +25,13 @@ void ppu::initialize(mmu* memory, cpu* cp) {
 };
 
 void ppu::render_line() {
-    int tile_number = 0;
-    // word tile = (get_lcd_4() ? 0x8000 : 0x8800) + (tile_number +
-    // 128) * 16;
-
+    
     if (get_bg_display()) {
-        // render tiles
+        render_tiles();
     }
 
     if (get_obj_display_enable()) {
-        // render sprites
+        render_sprites();
     }
 };
 
@@ -58,8 +55,7 @@ void ppu::update_graphics() {
             // line values are between 0 and 153
             *line = 0;
         } else if (*line < 144) {
-            // display only has 144 lines, lines between 144-153 serve other
-            // purposes
+            // display only has 144 lines, lines between 144-153 serve otherpurposes
             render_line();
         }
     }
