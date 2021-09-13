@@ -3,8 +3,8 @@
 #include "cartridge.h"
 #include "cpu.h"
 #include "mmu.h"
-#include "ppu.h"
 #include "opcodes.h"
+#include "ppu.h"
 
 SDL_Renderer *renderer;
 
@@ -40,6 +40,75 @@ void update_screen(ppu *p) {
     }
 }
 
+void handle_input(cpu* cp, SDL_Event event) {
+    if (event.type == SDL_KEYDOWN) {
+        printf("asgdyuasdgasd\n\n\n");
+        int key = -1;
+        switch (event.key.keysym.sym) {
+            case SDLK_a:
+                key = 4;
+                break;
+            case SDLK_s:
+                key = 5;
+                break;
+            case SDLK_RETURN:
+                key = 7;
+                break;
+            case SDLK_SPACE:
+                key = 6;
+                break;
+            case SDLK_RIGHT:
+                key = 0;
+                break;
+            case SDLK_LEFT:
+                key = 1;
+                break;
+            case SDLK_UP:
+                key = 2;
+                break;
+            case SDLK_DOWN:
+                key = 3;
+                break;
+        }
+        if (key != -1) {
+            cp->key_pressed(key);
+        }
+    }
+    // If a key was released
+    else if (event.type == SDL_KEYUP) {
+        int key = -1;
+        switch (event.key.keysym.sym) {
+            case SDLK_a:
+                key = 4;
+                break;
+            case SDLK_s:
+                key = 5;
+                break;
+            case SDLK_RETURN:
+                key = 7;
+                break;
+            case SDLK_SPACE:
+                key = 6;
+                break;
+            case SDLK_RIGHT:
+                key = 0;
+                break;
+            case SDLK_LEFT:
+                key = 1;
+                break;
+            case SDLK_UP:
+                key = 2;
+                break;
+            case SDLK_DOWN:
+                key = 3;
+                break;
+        }
+        if (key != -1) {
+            cp->key_released(key);
+        }
+    }
+}
+
 int main() {
     sdl_init();
     SDL_Event event;
@@ -58,8 +127,8 @@ int main() {
 
     bool running = true;
     while (running) {
-    //for(int i=0; i < 200; i++) {
-        //printf("--------- %i ---------\n", i);
+        // for(int i=0; i < 200; i++) {
+        // printf("--------- %i ---------\n", i);
         cp->emulate_cycle();
         p->update_graphics();
         update_screen(p);
@@ -67,26 +136,27 @@ int main() {
         int startMs = SDL_GetTicks();
 
         char str[7];
-        while(debug) {
-            scanf("%s", str);                 
+        while (debug) {
+            scanf("%s", str);
             if (strcmp("c", str) == 0) {
                 break;
-            } else if(strcmp("e", str) == 0) {
+            } else if (strcmp("e", str) == 0) {
                 exit(0);
             } else {
-                printf("[%04s]: %02x\n", str, m->address[strtol(str, NULL, 16)]);
+                printf("[%04s]: %02x\n", str,
+                       m->address[strtol(str, NULL, 16)]);
             }
         }
-    
-        while (SDL_PollEvent(&event)) {  // poll until all events are handled!
+
+        while (SDL_PollEvent(&event)) { 
+            handle_input(cp, event);
             if (event.type == SDL_QUIT) {
                 running = false;
             }
         }
-
+        
         int endMs = SDL_GetTicks();
         SDL_Delay(60 - (endMs - startMs));
     }
-
     return 0;
 }

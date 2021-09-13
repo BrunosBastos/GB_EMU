@@ -8,10 +8,11 @@ void cpu::initialize(mmu* mmu) {
     memory = mmu;
     time_counter = 0;
     divider_counter = 0;
-    // sp = 0xFFFF;        // TODO: check this later
+    sp = 0xFFFE;
     interrupt_master = true;
     pending_interrupt_disabled = false;
     pending_interrupt_enabled = false;
+    joypad_state = 0xFF;
 }
 
 void cpu::emulate_cycle() {
@@ -36,6 +37,48 @@ void cpu::emulate_cycle() {
             pending_interrupt_enabled = false;
         }
     }
+};
+
+void cpu::key_pressed(int key) {
+    bool previously_unset = false;
+
+    if (!(joypad_state & (1 << key))) {
+        previously_unset = true;
+    }
+
+    joypad_state &= ~(1 << key);
+
+    byte res = memory->address[0xFF00];
+    bool req_interrupt = false;
+
+    // standard buttons
+    if (key > 3 && !(res & (1 << 5))) {
+        req_interrupt = true;
+    }
+    // directional buttons
+    else if (key <= 3 && !(res & (1 << 4))) {
+        req_interrupt = true;
+    }
+
+    if (req_interrupt && !previously_unset) {
+        request_interrupt(4);
+    }
+}
+
+void cpu::key_released(int key) { joypad_state |= (1 << key); };
+
+byte cpu::get_joypad_state() {
+    byte res = memory->address[0xFF00] ^ 0xFF;
+
+    // standard buttons
+    if (!(res & (1 << 4))) {
+        res &= ((joypad_state >> 4) | 0xF0);
+    }
+    // directional buttons
+    else if (!(res & (1 << 5))) {
+        res &= ((joypad_state & 0xF) | 0xF0);
+    }
+    return res;
 };
 
 void cpu::execute_opcode() {
@@ -79,7 +122,7 @@ void cpu::service_interrupt(int id) {
     interrupt_master = false;
     memory->address[0xFF0F] &= ~(1 << id);
 
-    stack[--sp] = pc;
+    stack[--sp] = pc;  // FIXME:
 
     switch (id) {
         case 0:
@@ -522,19 +565,19 @@ word cpu::dec16(word op1) {
 };
 
 void cpu::set_z_flag(byte value) {
-    registers[F] |= (registers[F] & ~(1 << 7)) | (value << 7);
+    registers[F] = (registers[F] & ~(1 << 7)) | (value << 7);
 };
 
 void cpu::set_n_flag(byte value) {
-    registers[F] |= (registers[F] & ~(1 << 6)) | (value << 6);
+    registers[F] = (registers[F] & ~(1 << 6)) | (value << 6);
 };
 
 void cpu::set_h_flag(byte value) {
-    registers[F] |= (registers[F] & ~(1 << 5)) | (value << 5);
+    registers[F] = (registers[F] & ~(1 << 5)) | (value << 5);
 };
 
 void cpu::set_c_flag(byte value) {
-    registers[F] |= (registers[F] & ~(1 << 4)) | (value << 4);
+    registers[F] = (registers[F] & ~(1 << 4)) | (value << 4);
 };
 
 bool cpu::get_z_flag() { return registers[F] & 0x80; };

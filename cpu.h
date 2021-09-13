@@ -25,6 +25,10 @@ class cpu {
 
         int last_clock;         // keeps track of the number of cycles from the last opcode
         int total_clock;        // keeps track of the number of cycles since the beginning
+        int time_counter;
+        int divider_counter;
+        
+        byte joypad_state;
 
         byte registers[8];          // A-F B-C D-E H-L
 
@@ -45,6 +49,13 @@ class cpu {
         void request_interrupt(int id);
         void execute_interrupts();
         void service_interrupt(int id);
+
+        void update_timers();
+
+        void key_released(int key);
+        void key_pressed(int key);
+        byte get_joypad_state();
+
 
         void ld_nn_n(byte reg);
         void ld_r1_r2(byte r1, byte r2);
