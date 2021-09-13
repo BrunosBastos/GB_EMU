@@ -7,7 +7,7 @@ byte cycle_table_cb[0xBF];
 
 
 void initialize_optable() {
-    optable[0x00] = &op_00; cycle_table[0x00] = 4; 
+    optable[0x00] = &op_00; cycle_table[0x00] = 4;
     optable[0x01] = &op_01; cycle_table[0x01] = 12;
     optable[0x02] = &op_02; cycle_table[0x02] = 8;
     optable[0x03] = &op_03; cycle_table[0x03] = 8;
