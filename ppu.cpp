@@ -312,4 +312,3 @@ bool ppu::get_bg_tile_map_select() { return *lcd_control & 0x08; };
 bool ppu::get_obj_size() { return *lcd_control & 0x04; };
 bool ppu::get_obj_display_enable() { return *lcd_control & 0x02; };
 bool ppu::get_bg_display() { return *lcd_control & 0x01; };
-

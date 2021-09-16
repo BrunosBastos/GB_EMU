@@ -1,19 +1,85 @@
 
+#include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "opcodes.h"
 
 void cpu::initialize(mmu* mmu) {
-    pc = 0x100;
+    printf("in initialize\n");
+
     memory = mmu;
+    pc = 0x100;
+    sp = 0xFFFE;
+
     time_counter = 0;
     divider_counter = 0;
-    sp = 0xFFFE;
+    current_clock_speed = 1024;
+
     interrupt_master = true;
     pending_interrupt_disabled = false;
     pending_interrupt_enabled = false;
     joypad_state = 0xFF;
-}
+
+    current_ram_bank = 0;
+
+    mbc1 = false;
+    mbc2 = false;
+    using16_8_model = false;
+
+    // what kinda rom switching are we using, if any?
+    switch (read_memory(0x147)) {
+        case 0:
+            mbc1 = false;
+            break;  // not using any memory swapping
+        case 1:
+        case 2:
+        case 3:
+            mbc1 = true;
+            break;
+        case 5:
+            mbc2 = true;
+            break;
+        case 6:
+            mbc2 = true;
+            break;
+    }
+
+    // how many ram banks do we neeed, if any?
+    int n_ram_banks = 0;
+    switch (read_memory(0x149)) {
+        case 0:
+            n_ram_banks = 0;
+            break;
+        case 1:
+            n_ram_banks = 1;
+            break;
+        case 2:
+            n_ram_banks = 1;
+            break;
+        case 3:
+            n_ram_banks = 4;
+            break;
+        case 4:
+            n_ram_banks = 16;
+            break;
+    }
+
+    // create ram banks
+    for (int i = 0; i < n_ram_banks; i++) {
+        byte* ram = new byte[0x2000];
+        memset(ram, 0, sizeof(ram));
+        memory->ram_banks.push_back(ram);
+    }
+
+    if(n_ram_banks > 0) {
+        for (int i = 0; i < 0x2000; i++) {
+            memory->ram_banks[0][i] = memory->address[0xA000 + i];
+        }
+    }
+    printf("out initialize\n");
+
+};
 
 void cpu::emulate_cycle() {
     // get opcode
@@ -37,6 +103,215 @@ void cpu::emulate_cycle() {
             pending_interrupt_enabled = false;
         }
     }
+};
+
+byte cpu::read_memory(word addr) {
+    printf("in read_memory\n");
+
+    // reading from rom bank
+    if (addr >= 0x4000 && addr <= 0x7FFF) {
+        unsigned int new_Address = addr;
+        new_Address += ((current_rom_bank - 1) * 0x4000);
+        return memory->cart->rom[new_Address];
+    }
+    // reading from RAM Bank
+    else if (addr >= 0xA000 && addr <= 0xBFFF) {
+        // WORD new_Address = addr - 0xA000;
+        // return m_RamBank.at(current_ram_bank)[new_Address];
+        assert(false);
+    }
+    // trying to read joypad state
+    else if (addr == 0xFF00)
+        return get_joypad_state();
+
+
+    byte res = memory->address[addr];
+
+    printf("out read_memory\n");
+
+    return res;
+};
+
+void cpu::write_memory(word addr, byte data) {
+    printf("in write_memory\n");
+    // writing to memory addr 0x0 to 0x1FFF this disables writing to the ram
+    // bank. 0 disables, 0xA enables
+    if (addr <= 0x1FFF) {
+        if (mbc1) {
+            if ((data & 0xF) == 0xA)
+                enable_ram_bank = true;
+            else if (data == 0x0)
+                enable_ram_bank = false;
+        } else if (mbc2) {
+            // bit 0 of upper byte must be 0
+            if (!(addr & 0x10)) {
+                if ((data & 0xF) == 0xA)
+                    enable_ram_bank = true;
+                else if (data == 0x0)
+                    enable_ram_bank = false;
+            }
+        }
+    }
+
+    // if writing to a memory addr between 2000 and 3FFF then we need to
+    // change rom bank
+    else if ((addr >= 0x2000) && (addr <= 0x3FFF)) {
+        if (mbc1) {
+            if (data == 0x00) data++;
+
+            data &= 31;
+
+            // Turn off the lower 5-bits.
+            current_rom_bank &= 224;
+
+            // Combine the written data with the register.
+            current_rom_bank |= data;
+
+            printf("Changing Rom Bank to %d", current_rom_bank);
+        } else if (mbc2) {
+            data &= 0xF;
+            current_rom_bank = data;
+        }
+    }
+
+    // writing to addr 0x4000 to 0x5FFF switches ram banks (if enabled of
+    // course)
+    else if ((addr >= 0x4000) && (addr <= 0x5FFF)) {
+        if (mbc1) {
+            // are we using memory model 16/8
+            if (using16_8_model) {
+                // in this mode we can only use Ram Bank 0
+                current_ram_bank = 0;
+
+                data &= 3;
+                data <<= 5;
+
+                if ((current_rom_bank & 31) == 0) {
+                    data++;
+                }
+
+                // Turn off bits 5 and 6, and 7 if it somehow got turned on.
+                current_rom_bank &= 31;
+
+                // Combine the written data with the register.
+                current_rom_bank |= data;
+
+                printf("Changing Rom Bank to %d", current_rom_bank);
+            } else {
+                current_ram_bank = data & 0x3;
+                printf("=====Changing Ram Bank to %d=====", current_ram_bank);
+            }
+        }
+    }
+
+    // writing to addr 0x6000 to 0x7FFF switches memory model
+    else if ((addr >= 0x6000) && (addr <= 0x7FFF)) {
+        if (mbc1) {
+            // we're only interested in the first bit
+            data &= 1;
+            if (data == 1) {
+                current_ram_bank = 0;
+                using16_8_model = false;
+            } else
+                using16_8_model = true;
+        }
+    }
+
+    // from now on we're writing to RAM
+
+    else if ((addr >= 0xA000) && (addr <= 0xBFFF)) {
+        if (enable_ram_bank) {
+            if (mbc1) {
+                word new_addr = addr - 0xA000;
+                memory->ram_banks.at(current_ram_bank)[new_addr] = data;
+            }
+        } else if (mbc2 && (addr < 0xA200)) {
+            word new_addr = addr - 0xA000;
+            memory->ram_banks.at(current_ram_bank)[new_addr] = data;
+        }
+
+    }
+
+    // we're right to internal RAM, remember that it needs to echo it
+    else if ((addr >= 0xC000) && (addr <= 0xDFFF)) {
+        memory->address[addr] = data;
+    }
+
+    // echo memory. Writes here and into the internal ram. Same as above
+    else if ((addr >= 0xE000) && (addr <= 0xFDFF)) {
+        memory->address[addr] = data;
+        memory->address[addr - 0x2000] = data;  // echo data into ram addr
+    }
+
+    // This area is restricted.
+    else if ((addr >= 0xFEA0) && (addr <= 0xFEFF)) {
+    }
+
+    // reset the divider register
+    else if (addr == 0xFF04) {
+        memory->address[0xFF04] = 0;
+        divider_counter = 0;
+    }
+
+    // not sure if this is correct
+    else if (addr == 0xFF07) {
+        memory->address[addr] = data;
+
+        int timerVal = data & 0x03;
+
+        int clockSpeed = 0;
+
+        switch (timerVal) {
+            case 0:
+                clockSpeed = 1024;
+                break;
+            case 1:
+                clockSpeed = 16;
+                break;
+            case 2:
+                clockSpeed = 64;
+                break;
+            case 3:
+                clockSpeed = 256;
+                break;  // 256
+            default:
+                assert(false);
+                break;  // weird timer val
+        }
+
+        if (clockSpeed != current_clock_speed) {
+            time_counter = 0;
+            current_clock_speed = clockSpeed;
+        }
+    }
+
+    // FF44 shows which horizontal scanline is currently being draw. Writing
+    // here resets it
+    else if (addr == 0xFF44) {
+        memory->address[0xFF44] = 0;
+    }
+
+    else if (addr == 0xFF45) {
+        memory->address[addr] = data;
+    }
+    // DMA transfer
+    else if (addr == 0xFF46) {
+        word new_addr = (data << 8);
+        for (int i = 0; i < 0xA0; i++) {
+            memory->address[0xFE00 + i] = read_memory(new_addr + i);
+        }
+    }
+
+    // This area is restricted.
+    else if ((addr >= 0xFF4C) && (addr <= 0xFF7F)) {
+    }
+
+    // I guess we're ok to write to memory... gulp
+    else {
+        memory->address[addr] = data;
+    }
+
+    printf("out write_memory\n");
 };
 
 void cpu::key_pressed(int key) {
@@ -138,7 +413,7 @@ void cpu::service_interrupt(int id) {
             pc = 0x60;
             break;
     }
-}
+};
 
 void cpu::update_timers() {
     divider_counter += last_clock;
@@ -177,7 +452,7 @@ void cpu::update_timers() {
             }
         }
     }
-}
+};
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////

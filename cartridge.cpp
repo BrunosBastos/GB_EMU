@@ -2,6 +2,7 @@
 #include <string.h>
 
 void cartridge::cartridge_load(const char* filename) {
+    printf("in cartridge\n");
     
     FILE *file = NULL;
     file = fopen(filename, "rb");
@@ -17,13 +18,10 @@ void cartridge::cartridge_load(const char* filename) {
                 free(rom);
                 fclose(file);
             }
-
-        title = strdup(filename);
-
+            title = strdup(filename);
         }
         fclose(file);
     } 
-
 };
 
 void cartridge::cartridge_free() {
@@ -38,5 +36,4 @@ void cartridge::print(int s, int e) {
         printf("%02x ", rom[s + i]);
     }
     printf("\n");    
-
-}
+};

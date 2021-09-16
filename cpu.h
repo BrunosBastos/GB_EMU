@@ -27,6 +27,7 @@ class cpu {
         int total_clock;        // keeps track of the number of cycles since the beginning
         int time_counter;
         int divider_counter;
+        int current_clock_speed;
         
         byte joypad_state;
 
@@ -34,6 +35,15 @@ class cpu {
 
         word sp;
         byte stack[0x10000];
+
+        byte current_rom_bank;
+        byte current_ram_bank;
+        bool mbc1;
+        bool mbc2;
+        bool mbc3;
+        bool enable_ram_bank;
+        bool using16_8_model;
+
 
         bool interrupt_master;
         bool pending_interrupt_disabled;
@@ -44,6 +54,9 @@ class cpu {
 
         void cpu_init_table();
         void cpu_init_table_cb();
+
+        byte read_memory(word addr);
+        void write_memory(word address, byte data);
 
         void debug();
         void request_interrupt(int id);

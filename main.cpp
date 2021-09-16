@@ -17,7 +17,7 @@ void sdl_init() {
                          800, 600, SDL_WINDOW_SHOWN);
 
     renderer = SDL_CreateRenderer(window, -1, 0);
-}
+};
 
 void change_color(int color) {
     if (color == WHITE) {
@@ -29,7 +29,7 @@ void change_color(int color) {
     } else if (color == BLACK) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     }
-}
+};
 
 void update_screen(ppu *p) {
     for (int x = 0; x < PPU_BUFFER_WIDTH; x++) {
@@ -38,7 +38,7 @@ void update_screen(ppu *p) {
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
-}
+};
 
 void handle_input(cpu* cp, SDL_Event event) {
     if (event.type == SDL_KEYDOWN) {
@@ -107,7 +107,7 @@ void handle_input(cpu* cp, SDL_Event event) {
             cp->key_released(key);
         }
     }
-}
+};
 
 int main() {
     sdl_init();
@@ -154,9 +154,9 @@ int main() {
                 running = false;
             }
         }
-        
+
         int endMs = SDL_GetTicks();
         SDL_Delay(60 - (endMs - startMs));
     }
     return 0;
-}
+};

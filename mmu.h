@@ -34,6 +34,11 @@ class mmu {
         };
 
         byte address[0x10000];
+        cartridge* cart;
+		std::vector<byte*> ram_banks;
+        
+        byte current_rom_bank;
+
 
         unsigned short rom[2] = {0x0000, 0x4000};   // ROM banks, there are 2 of size 16kB
         unsigned short vram = 0x8000;               // video RAM $8000-9FFF

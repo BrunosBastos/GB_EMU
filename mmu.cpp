@@ -1,14 +1,10 @@
 #include "mmu.h"
 #include <cstring>
 
-void mmu::load_rom(cartridge *c) {
-    memcpy(address, c->rom, c->size);
-};
-
-byte mmu::read_memory(int addr) {
-    return address[addr];
-};
-
-void mmu::write_memory(int addr, byte value) {
-    address[addr] = value;
+void mmu::load_rom(cartridge *c) { 
+    printf("in load");
+    cart = c;
+    memcpy(address, c->rom, 0x8000);
+	current_rom_bank = 1;
+    printf("out load");
 };

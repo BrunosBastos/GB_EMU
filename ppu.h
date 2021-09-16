@@ -80,5 +80,4 @@ class ppu {
         // OBJ Display Enable(0=OFF, 1=ON)
         // Bg Display(0=OFF, 1=ON)
 
-
 };
