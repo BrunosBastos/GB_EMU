@@ -166,6 +166,10 @@ class cpu {
         void rst_n(byte n);
 
         void ret();
+        void store_pc_stack();
+        void push16(byte r1);
+        void pop16(byte r1); 
+
         void ret_cc(byte cc);
         void reti();
 
@@ -175,8 +179,8 @@ class cpu {
         byte or8(byte op1, byte op2);
         byte xor8(byte op1, byte op2);
         void cp(byte op1, byte op2);
-        byte inc8(byte op1);
-        byte dec8(byte op1);
+        void inc8(byte op1);
+        void dec8(byte op1);
 
         word add16(word op1, word op2);
         word inc16(word op1);

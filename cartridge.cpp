@@ -2,8 +2,6 @@
 #include <string.h>
 
 void cartridge::cartridge_load(const char* filename) {
-    printf("in cartridge\n");
-    
     FILE *file = NULL;
     file = fopen(filename, "rb");
     

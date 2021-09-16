@@ -6,8 +6,6 @@
 #include "opcodes.h"
 
 void cpu::initialize(mmu* mmu) {
-    printf("in initialize\n");
-
     memory = mmu;
     pc = 0x100;
     sp = 0xFFFE;
@@ -72,13 +70,11 @@ void cpu::initialize(mmu* mmu) {
         memory->ram_banks.push_back(ram);
     }
 
-    if(n_ram_banks > 0) {
+    if (n_ram_banks > 0) {
         for (int i = 0; i < 0x2000; i++) {
             memory->ram_banks[0][i] = memory->address[0xA000 + i];
         }
     }
-    printf("out initialize\n");
-
 };
 
 void cpu::emulate_cycle() {
@@ -106,8 +102,6 @@ void cpu::emulate_cycle() {
 };
 
 byte cpu::read_memory(word addr) {
-    printf("in read_memory\n");
-
     // reading from rom bank
     if (addr >= 0x4000 && addr <= 0x7FFF) {
         unsigned int new_Address = addr;
@@ -124,16 +118,10 @@ byte cpu::read_memory(word addr) {
     else if (addr == 0xFF00)
         return get_joypad_state();
 
-
-    byte res = memory->address[addr];
-
-    printf("out read_memory\n");
-
-    return res;
+    return memory->address[addr];
 };
 
 void cpu::write_memory(word addr, byte data) {
-    printf("in write_memory\n");
     // writing to memory addr 0x0 to 0x1FFF this disables writing to the ram
     // bank. 0 disables, 0xA enables
     if (addr <= 0x1FFF) {
@@ -310,8 +298,6 @@ void cpu::write_memory(word addr, byte data) {
     else {
         memory->address[addr] = data;
     }
-
-    printf("out write_memory\n");
 };
 
 void cpu::key_pressed(int key) {
@@ -463,7 +449,6 @@ void cpu::subc_a_pc() {
 };
 
 void cpu::add_hl_r16(byte r16) {
-    // FIXME:
     word res = add16(registers[H] | (registers[L] << 8),
                      registers[r16] | (registers[r16 + 1] << 8));
 
@@ -494,13 +479,13 @@ void cpu::add_sp_pc() {
 };
 
 void cpu::inc_r16(byte r16) {
-    word res = inc16(registers[r16] | (registers[r16 + 1] << 8));
+    word res = (registers[r16] | (registers[r16 + 1] << 8)) + 1;
     registers[r16] = res & 0xFF;
     registers[r16 + 1] = (res & 0xFF00) >> 8;
 };
 
 void cpu::dec_r16(byte r16) {
-    word res = dec16(registers[r16] | (registers[r16 + 1] << 8));
+    word res = (registers[r16] | (registers[r16 + 1] << 8)) - 1;
     registers[r16] = res & 0xFF;
     registers[r16 + 1] = (res & 0xFF00) >> 8;
 };
@@ -529,68 +514,53 @@ void cpu::swap_r16(byte r16) {
 // for rl vs rlc : http://jgmalcolm.com/z80/advanced/shif
 
 void cpu::rlc_r1(byte r1) {
+    // rotates r1 to the left with bit 7 being moved to bit 0 and
+    // also stored in the carry
     set_n_flag(0);
     set_h_flag(0);
 
-    if (registers[r1] == 0x80) {
-        set_z_flag(1);
-        set_c_flag(1);
-    } else if (registers[r1] & 0x80) {
-        set_c_flag(1);
-    } else {
-        set_c_flag(0);
-    }
-
+    set_c_flag((registers[r1] & (1 << 7)) >> 7);
     byte carry = get_c_flag() >> 6;
     registers[r1] = (registers[r1] << 1) | carry;
+
+    if (registers[r1] == 0) {
+        set_z_flag(1);
+    }
 };
 
 void cpu::rl_r1(byte r1) {
+    // rotates r1 to the left with the carry's value put into bit
+    // 0 and bit 7 is put into the carry
+
     set_n_flag(0);
     set_h_flag(0);
     byte carry = get_c_flag() >> 6;
 
-    if (registers[r1] == 0x80) {
-        set_z_flag(1);
-    }
-
-    if (registers[r1] & 0x80) {
-        set_c_flag(1);
-    } else {
-        set_c_flag(0);
-    }
+    set_c_flag((registers[r1] & (1 << 7)) >> 7);
 
     registers[r1] = (registers[r1] << 1) | carry;
+    if (registers[r1] == 0) set_z_flag(1);
 };
 
 void cpu::rrc_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
 
-    if (registers[r1] == 0x01) set_z_flag(1);
-
-    if (registers[r1] & 0x01)
-        set_c_flag(1);
-    else
-        set_c_flag(0);
-
-    byte carry = registers[r1] & 0x01;
+    set_c_flag(registers[r1] & 0x01);
+    byte carry = get_c_flag() >> 6;
     registers[r1] = (registers[r1] >> 1) | (carry << 7);
+
+    if (registers[r1] == 0) set_z_flag(1);
 };
 
 void cpu::rr_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
     byte carry = get_c_flag() >> 6;
-
-    if (registers[r1] == 0x01) set_z_flag(1);
-
-    if (registers[r1] & 0x01)
-        set_c_flag(1);
-    else
-        set_c_flag(0);
+    set_c_flag(registers[r1] & 0x01);
 
     registers[r1] = (registers[r1] >> 1) | (carry << 7);
+    if (registers[r1] == 0) set_z_flag(1);
 };
 
 void cpu::sla_r1(byte r1) {
@@ -709,6 +679,7 @@ void cpu::ret_cc(byte cc) {
 };
 
 byte cpu::add8(byte op1, byte op2) {
+    // TODO: refactor
     set_n_flag(0);
 
     byte res = op1 + op2;
@@ -793,51 +764,62 @@ void cpu::cp(byte op1, byte op2) {
     if ((op1 & 0xF) < (op2 & 0xF)) set_h_flag(1);
 };
 
-byte cpu::inc8(byte op1) {
+void cpu::inc8(byte op1) {
     set_n_flag(0);
 
-    byte res = op1 + 1;
+    byte res = registers[op1] + 1;
 
     if (res == 0) set_z_flag(1);
 
-    if ((op1 & 0x0F) == 0x0F) set_h_flag(1);
+    if ((registers[op1] & 0x0F) == 0x0F) set_h_flag(1);
 
-    return res;
+    registers[op1] = res;
 };
 
-byte cpu::dec8(byte op1) {
+void cpu::dec8(byte op1) {
     set_n_flag(1);
 
-    byte res = op1 - 1;
+    byte res = registers[op1] - 1;
 
     if (res == 0) set_z_flag(1);
 
-    if ((res & 0x0F) == 0x0F) set_h_flag(1);
+    if ((res & 0x0F) != 0x0F)
+        set_h_flag(1);  // FIXME: set if no borrow from bit 4
 
-    return res;
+    registers[op1] = res;
 };
 
 word cpu::add16(word op1, word op2) {
-    // this operation uses the values of the registers and not the addresses
-
     set_n_flag(0);
 
     if ((0xFFFF - op1) < op2) set_c_flag(1);
 
-    if ((0x0FFF & op1) + (0X0FFF & op2) > 0x0FFF) set_h_flag(1);  // not sure
+    if ((0x0FFF & op1) + (0X0FFF & op2) > 0x0FFF) set_h_flag(1);
 
     return op1 + op2;
 };
 
-word cpu::inc16(word op1) {
-    // no flags are affected making this function kinda useless
-    return op1 + 1;
-};
+void cpu::ret() {
+    // FIXME: lets assume that the LSB is at the top of the stack
+    pc = (stack[sp++] | (stack[sp++] << 8)) - 1;
+}
 
-word cpu::dec16(word op1) {
-    // no flags are affected making this function kinda useless
-    return op1 - 1;
-};
+void cpu::store_pc_stack() {
+    stack[--sp] = (pc & 0xFF00) >> 8;
+    stack[--sp] = pc & 0xFF;
+}
+
+void cpu::push16(byte r1) {
+    // FIXME: there is a chance that the order is not correct
+    // changing the order of the lines will solve it
+    stack[--sp] = registers[r1];
+    stack[--sp] = registers[r1 + 1];
+}
+
+void cpu::pop16(byte r1) {
+    registers[r1 + 1] = stack[sp++];
+    registers[r1] = stack[sp++];
+}
 
 void cpu::set_z_flag(byte value) {
     registers[F] = (registers[F] & ~(1 << 7)) | (value << 7);

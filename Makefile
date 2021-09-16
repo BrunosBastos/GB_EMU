@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 LDFLAGS = -lm
 OBJFILES = $(wildcard *.cpp)
 TARGET = main
