@@ -6,6 +6,7 @@
 #include "opcodes.h"
 
 void cpu::initialize(mmu* mmu) {
+    
     memory = mmu;
     pc = 0x100;
     sp = 0xFFFE;
@@ -20,10 +21,49 @@ void cpu::initialize(mmu* mmu) {
     joypad_state = 0xFF;
 
     current_ram_bank = 0;
+    current_rom_bank = 1;
 
     mbc1 = false;
     mbc2 = false;
     using16_8_model = false;
+
+    registers[A] = 0x01;
+    registers[F] = 0xB0;
+    registers[C] = 0x13;
+    registers[E] = 0xD8;
+    registers[H] = 0x01;
+    registers[L] = 0x4D;
+    memory->address[0xFF05] = 0x00; // TIMA
+    memory->address[0xFF06] = 0x00; // TMA
+    memory->address[0xFF07] = 0x00; // TAC
+    memory->address[0xFF10] = 0x80; // NR10
+    memory->address[0xFF11] = 0xBF; // NR11
+    memory->address[0xFF12] = 0xF3; // NR12
+    memory->address[0xFF14] = 0xBF; // NR14
+    memory->address[0xFF16] = 0x3F; // NR21
+    memory->address[0xFF17] = 0x00; // NR22
+    memory->address[0xFF19] = 0xBF; // NR24
+    memory->address[0xFF1A] = 0x7F; // NR30
+    memory->address[0xFF1B] = 0xFF; // NR31
+    memory->address[0xFF1C] = 0x9F; // NR32
+    memory->address[0xFF1E] = 0xBF; // NR33
+    memory->address[0xFF20] = 0xFF; // NR41
+    memory->address[0xFF21] = 0x00; // NR42
+    memory->address[0xFF22] = 0x00; // NR43
+    memory->address[0xFF23] = 0xBF; // NR30
+    memory->address[0xFF24] = 0x77; // NR50
+    memory->address[0xFF25] = 0xF3; // NR51
+    memory->address[0xFF26] = 0xF1; // GB
+    memory->address[0xFF40] = 0x91; // LCDC
+    memory->address[0xFF42] = 0x00; // SCY
+    memory->address[0xFF43] = 0x00; // SCX
+    memory->address[0xFF45] = 0x00; // LYC
+    memory->address[0xFF47] = 0xFC; // BGP
+    memory->address[0xFF48] = 0xFF; // OBP0
+    memory->address[0xFF49] = 0xFF; // OBP1
+    memory->address[0xFF4A] = 0x00; // WY
+    memory->address[0xFF4B] = 0x00; // WX
+    memory->address[0xFFFF] = 0x00; // IE
 
     // what kinda rom switching are we using, if any?
     switch (read_memory(0x147)) {
@@ -79,7 +119,7 @@ void cpu::initialize(mmu* mmu) {
 
 void cpu::emulate_cycle() {
     // get opcode
-    opcode = memory->address[pc];
+    opcode = read_memory(pc);
     last_clock = cycle_table[opcode];
 
     // decode and execute op
@@ -88,13 +128,13 @@ void cpu::emulate_cycle() {
     pc += 1;
 
     if (pending_interrupt_disabled) {
-        if (memory->address[pc - 1] != 0xF3) {
+        if (read_memory(pc - 1) != 0xF3) {
             interrupt_master = false;
             pending_interrupt_disabled = false;
         }
     }
     if (pending_interrupt_enabled) {
-        if (memory->address[pc - 1] != 0xFB) {
+        if (read_memory(pc - 1) != 0xFB) {
             interrupt_master = true;
             pending_interrupt_enabled = false;
         }
@@ -372,6 +412,7 @@ void cpu::execute_interrupts() {
                 if ((req & (1 << i)) && (enabled & (1 << i))) {
                     // FIXME: does this need a break?
                     service_interrupt(i);
+                    break;
                 }
             }
         }
@@ -383,7 +424,7 @@ void cpu::service_interrupt(int id) {
     interrupt_master = false;
     memory->address[0xFF0F] &= ~(1 << id);
 
-    stack[--sp] = pc;  // FIXME:
+    store_pc_stack();
 
     switch (id) {
         case 0:
@@ -520,7 +561,7 @@ void cpu::rlc_r1(byte r1) {
     set_h_flag(0);
 
     set_c_flag((registers[r1] & (1 << 7)) >> 7);
-    byte carry = get_c_flag() >> 6;
+    byte carry = get_c_flag();
     registers[r1] = (registers[r1] << 1) | carry;
 
     if (registers[r1] == 0) {
@@ -534,7 +575,7 @@ void cpu::rl_r1(byte r1) {
 
     set_n_flag(0);
     set_h_flag(0);
-    byte carry = get_c_flag() >> 6;
+    byte carry = get_c_flag();
 
     set_c_flag((registers[r1] & (1 << 7)) >> 7);
 
@@ -547,7 +588,7 @@ void cpu::rrc_r1(byte r1) {
     set_h_flag(0);
 
     set_c_flag(registers[r1] & 0x01);
-    byte carry = get_c_flag() >> 6;
+    byte carry = get_c_flag();
     registers[r1] = (registers[r1] >> 1) | (carry << 7);
 
     if (registers[r1] == 0) set_z_flag(1);
@@ -556,9 +597,9 @@ void cpu::rrc_r1(byte r1) {
 void cpu::rr_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
-    byte carry = get_c_flag() >> 6;
+    byte carry = get_c_flag();
     set_c_flag(registers[r1] & 0x01);
-
+ 
     registers[r1] = (registers[r1] >> 1) | (carry << 7);
     if (registers[r1] == 0) set_z_flag(1);
 };
@@ -652,34 +693,33 @@ void cpu::call_cc_nn(byte cc) {
         memory->address[memory->address[++pc] | (memory->address[++pc] << 8)];
 
     if (cc == 0 && !get_z_flag()) {
-        stack[--sp] = pc;
+        store_pc_stack();
         pc = nn;
     } else if (cc == 1 && get_z_flag()) {
-        stack[--sp] = pc;
+        store_pc_stack();
         pc = nn;
     } else if (cc == 2 && !get_c_flag()) {
-        stack[--sp] = pc;
+        store_pc_stack();
         pc = nn;
     } else if (cc == 3 && get_c_flag()) {
-        stack[--sp] = pc;
+        store_pc_stack();
         pc = nn;
     }
 };
 
 void cpu::ret_cc(byte cc) {
     if (cc == 0 && !get_z_flag()) {
-        pc = stack[sp++];
+        ret();
     } else if (cc == 1 && get_z_flag()) {
-        pc = stack[sp++];
+        ret();
     } else if (cc == 2 && !get_c_flag()) {
-        pc = stack[sp++];
+        ret();
     } else if (cc == 3 && get_c_flag()) {
-        pc = stack[sp++];
+        ret();
     }
 };
 
 byte cpu::add8(byte op1, byte op2) {
-    // TODO: refactor
     set_n_flag(0);
 
     byte res = op1 + op2;
@@ -765,12 +805,11 @@ void cpu::cp(byte op1, byte op2) {
 };
 
 void cpu::inc8(byte op1) {
-    set_n_flag(0);
 
     byte res = registers[op1] + 1;
 
+    set_n_flag(0);
     if (res == 0) set_z_flag(1);
-
     if ((registers[op1] & 0x0F) == 0x0F) set_h_flag(1);
 
     registers[op1] = res;
@@ -801,24 +840,24 @@ word cpu::add16(word op1, word op2) {
 
 void cpu::ret() {
     // FIXME: lets assume that the LSB is at the top of the stack
-    pc = (stack[sp++] | (stack[sp++] << 8)) - 1;
+    pc = (read_memory(sp++) | (read_memory(sp++) << 8)) - 1;
 }
 
 void cpu::store_pc_stack() {
-    stack[--sp] = (pc & 0xFF00) >> 8;
-    stack[--sp] = pc & 0xFF;
+    write_memory(--sp, ((pc + 1) & 0xFF00) >> 8);
+    write_memory(--sp, ((pc + 1) & 0xFF));
 }
 
 void cpu::push16(byte r1) {
     // FIXME: there is a chance that the order is not correct
     // changing the order of the lines will solve it
-    stack[--sp] = registers[r1];
-    stack[--sp] = registers[r1 + 1];
+    write_memory(--sp, registers[r1 + 1]);
+    write_memory(--sp, registers[r1]);
 }
 
 void cpu::pop16(byte r1) {
-    registers[r1 + 1] = stack[sp++];
-    registers[r1] = stack[sp++];
+    registers[r1 + 1] = read_memory(sp++);
+    registers[r1] = read_memory(sp++);
 }
 
 void cpu::set_z_flag(byte value) {

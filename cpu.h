@@ -34,7 +34,6 @@ class cpu {
         byte registers[8];          // A-F B-C D-E H-L
 
         word sp;
-        byte stack[0x10000];
 
         byte current_rom_bank;
         byte current_ram_bank;
