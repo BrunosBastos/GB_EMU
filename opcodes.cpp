@@ -438,13 +438,13 @@ void op_1F(mmu* memory, cpu* cp) { cp->rr_r1(A); };
 void op_20(mmu* memory, cpu* cp) {
     cp->pc++;
     if (!cp->get_z_flag()) {
-        cp->pc += cp->read_memory(cp->pc);
+        cp->pc += (char)cp->read_memory(cp->pc);    // signed value
     }
 };
 
 void op_21(mmu* memory, cpu* cp) {
-    cp->registers[H] = cp->read_memory(++cp->pc);
     cp->registers[L] = cp->read_memory(++cp->pc);
+    cp->registers[H] = cp->read_memory(++cp->pc);
 };
 
 void op_22(mmu* memory, cpu* cp) {
@@ -490,7 +490,7 @@ void op_27(mmu* memory, cpu* cp) {
 
 void op_28(mmu* memory, cpu* cp) {
     cp->pc++;
-    if (cp->get_z_flag()) cp->pc += cp->read_memory(cp->pc);
+    if (cp->get_z_flag()) cp->pc += (char)cp->read_memory(cp->pc);    // signed value
 };
 
 void op_29(mmu* memory, cpu* cp) { cp->add_hl_r16(H); };
@@ -521,7 +521,7 @@ void op_2F(mmu* memory, cpu* cp) {
 
 void op_30(mmu* memory, cpu* cp) {
     cp->pc++;
-    if (!cp->get_c_flag()) cp->pc += cp->read_memory(cp->pc);
+    if (!cp->get_c_flag()) cp->pc += (char)cp->read_memory(cp->pc);    // signed value
 };
 
 void op_31(mmu* memory, cpu* cp) {
@@ -529,10 +529,10 @@ void op_31(mmu* memory, cpu* cp) {
 };
 
 void op_32(mmu* memory, cpu* cp) {
-    word hl = cp->registers[H] | (cp->registers[L] << 8);
+    word hl = cp->registers[L] | (cp->registers[H] << 8);
     cp->write_memory(hl--, cp->registers[A]);
-    cp->registers[H] = hl & 0x00FF;
-    cp->registers[L] = (hl & 0xFF00) >> 8;
+    cp->registers[L] = hl & 0x00FF;
+    cp->registers[H] = (hl & 0xFF00) >> 8;
 };
 
 void op_33(mmu* memory, cpu* cp) {
@@ -572,7 +572,7 @@ void op_37(mmu* memory, cpu* cp) {
 
 void op_38(mmu* memory, cpu* cp) {
     cp->pc++;
-    if (cp->get_c_flag()) cp->pc += cp->read_memory(cp->pc);
+    if (cp->get_c_flag()) cp->pc += (char)cp->read_memory(cp->pc);    // signed value
 };
 
 void op_39(mmu* memory, cpu* cp) { cp->add_hl_sp(); };
@@ -597,7 +597,7 @@ void op_3E(mmu* memory, cpu* cp) {
 void op_3F(mmu* memory, cpu* cp) {
     cp->set_n_flag(0);
     cp->set_h_flag(0);
-    cp->set_c_flag(~(cp->get_c_flag() >> 6));
+    cp->set_c_flag(~(cp->get_c_flag()));
 };
 
 void op_40(mmu* memory, cpu* cp) { cp->registers[B] = cp->registers[B]; };
@@ -1224,9 +1224,15 @@ void op_E7(mmu* memory, cpu* cp) {
 };
 
 void op_E8(mmu* memory, cpu* cp) {
-    // add signed immediate to sp
-    // this should solve it
-    cp->sp += (signed char)cp->read_memory(++cp->pc);
+    char n = cp->read_memory(++cp->pc);
+    word spn = cp->sp + n;
+
+    cp->set_z_flag(0);
+    cp->set_n_flag(0);
+    cp->set_h_flag((spn & 0xF) < (cp->sp & 0xF));
+    cp->set_c_flag((spn & 0xFF) < (cp->sp & 0xFF));
+
+    cp->sp = spn;
 };
 
 void op_E9(mmu* memory, cpu* cp) {
@@ -1273,9 +1279,16 @@ void op_F7(mmu* memory, cpu* cp) {
 };
 
 void op_F8(mmu* memory, cpu* cp) {
-    word spn = cp->sp + (signed char)memory->address[++cp->pc];
-    cp->registers[H] = spn & 0x00FF;
-    cp->registers[L] = (spn & 0xFF00) >> 8;
+    // https://stackoverflow.com/questions/57958631/game-boy-half-carry-flag-and-16-bit-instructions-especially-opcode-0xe8
+    char n = cp->read_memory(++cp->pc);
+    word spn = cp->sp + n;
+    cp->registers[L] = spn & 0x00FF;
+    cp->registers[H] = (spn & 0xFF00) >> 8;
+
+    cp->set_z_flag(0);
+    cp->set_n_flag(0);
+    cp->set_h_flag((spn & 0xF) < (cp->sp & 0xF));       // FIXME: not sure if this solves
+    cp->set_c_flag((spn & 0xFF) < (cp->sp & 0xFF));
 };
 
 void op_F9(mmu* memory, cpu* cp) {

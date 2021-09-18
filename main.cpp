@@ -41,6 +41,7 @@ void update_screen(ppu *p) {
 };
 
 void handle_input(cpu* cp, SDL_Event event) {
+    printf("Input \n");
     if (event.type == SDL_KEYDOWN) {
         int key = -1;
         switch (event.key.keysym.sym) {

@@ -125,7 +125,7 @@ void cpu::emulate_cycle() {
     // decode and execute op
     execute_opcode();
 
-    pc += 1;
+    pc++;
 
     if (pending_interrupt_disabled) {
         if (read_memory(pc - 1) != 0xF3) {
@@ -349,7 +349,7 @@ void cpu::key_pressed(int key) {
 
     joypad_state &= ~(1 << key);
 
-    byte res = memory->address[0xFF00];
+    byte res = read_memory(0xFF00);
     bool req_interrupt = false;
 
     // standard buttons
@@ -364,7 +364,7 @@ void cpu::key_pressed(int key) {
     if (req_interrupt && !previously_unset) {
         request_interrupt(4);
     }
-}
+};
 
 void cpu::key_released(int key) { joypad_state |= (1 << key); };
 
@@ -401,8 +401,8 @@ void cpu::request_interrupt(int id) { memory->address[0xFF0F] |= (1 << id); };
 
 void cpu::execute_interrupts() {
     if (interrupt_master) {
-        byte req = memory->address[0xFF0F];
-        byte enabled = memory->address[memory->ief];
+        byte req = read_memory(0xFF0F);
+        byte enabled = read_memory(0xFFFF);
 
         if (req & 0xFF) {
             // check if any of the bits is 1
@@ -412,7 +412,6 @@ void cpu::execute_interrupts() {
                 if ((req & (1 << i)) && (enabled & (1 << i))) {
                     // FIXME: does this need a break?
                     service_interrupt(i);
-                    break;
                 }
             }
         }
@@ -532,24 +531,26 @@ void cpu::dec_r16(byte r16) {
 };
 
 void cpu::swap_r1(byte r1) {
+    registers[r1] = (registers[r1] << 4) | (registers[r1] >> 4);
+    
+    set_z_flag(registers[r1] == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
 
-    registers[r1] = (registers[r1] << 4) | (registers[r1] >> 4);
-    if (registers[r1] == 0) set_z_flag(1);
 };
 
 void cpu::swap_r16(byte r16) {
+    byte temp = registers[r16];
+    
+    registers[r16] = registers[r16 + 1];
+    registers[r16 + 1] = temp;
+
+    set_z_flag(registers[r16] == 0 && registers[r16 + 1] == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
 
-    byte temp = registers[r16];
-
-    registers[r16] = registers[r16 + 1];
-    registers[r16 + 1] = temp;
-    if (registers[r16] == 0 && registers[r16 + 1] == 0) set_z_flag(1);
 };
 
 // for rl vs rlc : http://jgmalcolm.com/z80/advanced/shif
@@ -557,16 +558,14 @@ void cpu::swap_r16(byte r16) {
 void cpu::rlc_r1(byte r1) {
     // rotates r1 to the left with bit 7 being moved to bit 0 and
     // also stored in the carry
-    set_n_flag(0);
-    set_h_flag(0);
-
-    set_c_flag((registers[r1] & (1 << 7)) >> 7);
-    byte carry = get_c_flag();
+    
+    byte carry = (registers[r1] & (1 << 7)) >> 7;
     registers[r1] = (registers[r1] << 1) | carry;
 
-    if (registers[r1] == 0) {
-        set_z_flag(1);
-    }
+    set_z_flag(registers[r1] == 0);
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(carry);
 };
 
 void cpu::rl_r1(byte r1) {
@@ -720,120 +719,105 @@ void cpu::ret_cc(byte cc) {
 };
 
 byte cpu::add8(byte op1, byte op2) {
-    set_n_flag(0);
 
     byte res = op1 + op2;
 
-    if (res == 0) {
-        set_z_flag(1);
-    }
-
-    if ((op1 + op2) > 0xFF) {
-        set_c_flag(1);
-    }
-
-    if ((op1 & 0x0F) + (op2 & 0x0F) > 0x0F) {
-        set_h_flag(1);
-    }
+    set_z_flag(res == 0);
+    set_n_flag(0);
+    set_h_flag((op1 & 0x0F) + (op2 & 0x0F) > 0x0F);
+    set_c_flag((op1 + op2) > 0xFF);
 
     return res;
 };
 
 byte cpu::sub8(byte op1, byte op2) {
-    set_n_flag(1);
 
     byte res = op1 - op2;
 
-    if (res == 0) {
-        set_z_flag(1);
-    }
-
-    if (op2 < op1) {
-        set_c_flag(1);
-    }
-
-    if ((op2 & 0x0F) < (op1 & 0x0F)) {
-        set_h_flag(1);
-    }
+    set_z_flag(res == 0);
+    set_n_flag(1);
+    set_h_flag((op2 & 0x0F) < (op1 & 0x0F));
+    set_c_flag(op2 < op1);
+    
     return res;
 };
 
 byte cpu::and8(byte op1, byte op2) {
-    set_c_flag(0);
-    set_h_flag(1);
-    set_n_flag(0);
 
     byte res = op1 & op2;
 
-    if (res == 0) set_z_flag(1);
+    set_z_flag(res == 0);
+    set_n_flag(0);
+    set_h_flag(1);
+    set_c_flag(0);
 
     return res;
 };
 
 byte cpu::or8(byte op1, byte op2) {
-    set_c_flag(0);
-    set_h_flag(0);
-    set_n_flag(0);
 
     byte res = op1 | op2;
 
-    if (res == 0) set_z_flag(1);
+    set_z_flag(res == 0);
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(0);
 
     return res;
 };
 
 byte cpu::xor8(byte op1, byte op2) {
-    set_c_flag(0);
-    set_h_flag(0);
-    set_n_flag(0);
 
     byte res = op1 ^ op2;
 
-    if (res == 0) set_z_flag(1);
+    set_z_flag(res == 0);
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(0);
 
     return res;
 };
 
 void cpu::cp(byte op1, byte op2) {
+    // FIXME: manual says this is the same as performing
+    // A - n but if that is true then the flags
+    // should be set if A > n, since there is no borrow
+    // from this operation
+
+    set_z_flag(op1 == op2);
     set_n_flag(1);
+    set_h_flag((op1 & 0xF) < (op2 & 0xF));
+    set_c_flag(op1 < op2); 
 
-    if (op1 == op2) set_z_flag(1);
-
-    if (op1 < op2) set_c_flag(1);
-
-    if ((op1 & 0xF) < (op2 & 0xF)) set_h_flag(1);
 };
 
 void cpu::inc8(byte op1) {
 
     byte res = registers[op1] + 1;
 
+    set_z_flag(res == 0);
     set_n_flag(0);
-    if (res == 0) set_z_flag(1);
-    if ((registers[op1] & 0x0F) == 0x0F) set_h_flag(1);
+    set_h_flag((registers[op1] & 0x0F) == 0x0F);
 
     registers[op1] = res;
 };
 
 void cpu::dec8(byte op1) {
-    set_n_flag(1);
 
     byte res = registers[op1] - 1;
 
-    if (res == 0) set_z_flag(1);
-
-    if ((res & 0x0F) != 0x0F)
-        set_h_flag(1);  // FIXME: set if no borrow from bit 4
+    set_z_flag(res == 0);
+    set_n_flag(1);
+    set_h_flag((res & 0x0F) == 0x0F);
 
     registers[op1] = res;
 };
 
 word cpu::add16(word op1, word op2) {
+
     set_n_flag(0);
-
-    if ((0xFFFF - op1) < op2) set_c_flag(1);
-
-    if ((0x0FFF & op1) + (0X0FFF & op2) > 0x0FFF) set_h_flag(1);
+    set_h_flag((0x0FFF & op1) + (0X0FFF & op2) > 0x0FFF);
+    set_c_flag((0xFFFF - op1) < op2);
 
     return op1 + op2;
 };
