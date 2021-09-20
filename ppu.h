@@ -1,3 +1,6 @@
+#ifndef _PPU_H_
+#define _PPU_H_
+
 #include "types.h"
 #include "mmu.h"
 #include "cpu.h"
@@ -17,7 +20,6 @@
 #define BLACK 3
 
 
-
 class ppu {
 
 
@@ -30,7 +32,7 @@ class ppu {
         byte *windpos_x;
         byte *windpos_y;
 
-        byte *line;
+        word line;
 
         int clock_count;
 
@@ -46,7 +48,11 @@ class ppu {
         void render_line();
         void render_sprites();
         void render_tiles();
-        void get_color();
+
+        void update_bg_scanline(byte curr_line);
+        void update_window_scanline(byte curr_line);
+        void update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr);
+        void update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr);
 
         void set_lcd_status();
         void set_mode(int mode);
@@ -81,3 +87,5 @@ class ppu {
         // Bg Display(0=OFF, 1=ON)
 
 };
+
+#endif

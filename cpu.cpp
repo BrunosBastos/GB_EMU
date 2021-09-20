@@ -6,7 +6,6 @@
 #include "opcodes.h"
 
 void cpu::initialize(mmu* mmu) {
-    
     memory = mmu;
     pc = 0x100;
     sp = 0xFFFE;
@@ -33,43 +32,42 @@ void cpu::initialize(mmu* mmu) {
     registers[E] = 0xD8;
     registers[H] = 0x01;
     registers[L] = 0x4D;
-    memory->address[0xFF05] = 0x00; // TIMA
-    memory->address[0xFF06] = 0x00; // TMA
-    memory->address[0xFF07] = 0x00; // TAC
-    memory->address[0xFF10] = 0x80; // NR10
-    memory->address[0xFF11] = 0xBF; // NR11
-    memory->address[0xFF12] = 0xF3; // NR12
-    memory->address[0xFF14] = 0xBF; // NR14
-    memory->address[0xFF16] = 0x3F; // NR21
-    memory->address[0xFF17] = 0x00; // NR22
-    memory->address[0xFF19] = 0xBF; // NR24
-    memory->address[0xFF1A] = 0x7F; // NR30
-    memory->address[0xFF1B] = 0xFF; // NR31
-    memory->address[0xFF1C] = 0x9F; // NR32
-    memory->address[0xFF1E] = 0xBF; // NR33
-    memory->address[0xFF20] = 0xFF; // NR41
-    memory->address[0xFF21] = 0x00; // NR42
-    memory->address[0xFF22] = 0x00; // NR43
-    memory->address[0xFF23] = 0xBF; // NR30
-    memory->address[0xFF24] = 0x77; // NR50
-    memory->address[0xFF25] = 0xF3; // NR51
-    memory->address[0xFF26] = 0xF1; // GB
-    memory->address[0xFF40] = 0x91; // LCDC
-    memory->address[0xFF42] = 0x00; // SCY
-    memory->address[0xFF43] = 0x00; // SCX
-    memory->address[0xFF45] = 0x00; // LYC
-    memory->address[0xFF47] = 0xFC; // BGP
-    memory->address[0xFF48] = 0xFF; // OBP0
-    memory->address[0xFF49] = 0xFF; // OBP1
-    memory->address[0xFF4A] = 0x00; // WY
-    memory->address[0xFF4B] = 0x00; // WX
-    memory->address[0xFFFF] = 0x00; // IE
+    memory->address[0xFF05] = 0x00;  // TIMA
+    memory->address[0xFF06] = 0x00;  // TMA
+    memory->address[0xFF07] = 0x00;  // TAC
+    memory->address[0xFF10] = 0x80;  // NR10
+    memory->address[0xFF11] = 0xBF;  // NR11
+    memory->address[0xFF12] = 0xF3;  // NR12
+    memory->address[0xFF14] = 0xBF;  // NR14
+    memory->address[0xFF16] = 0x3F;  // NR21
+    memory->address[0xFF17] = 0x00;  // NR22
+    memory->address[0xFF19] = 0xBF;  // NR24
+    memory->address[0xFF1A] = 0x7F;  // NR30
+    memory->address[0xFF1B] = 0xFF;  // NR31
+    memory->address[0xFF1C] = 0x9F;  // NR32
+    memory->address[0xFF1E] = 0xBF;  // NR33
+    memory->address[0xFF20] = 0xFF;  // NR41
+    memory->address[0xFF21] = 0x00;  // NR42
+    memory->address[0xFF22] = 0x00;  // NR43
+    memory->address[0xFF23] = 0xBF;  // NR30
+    memory->address[0xFF24] = 0x77;  // NR50
+    memory->address[0xFF25] = 0xF3;  // NR51
+    memory->address[0xFF26] = 0xF1;  // GB
+    memory->address[0xFF40] = 0x91;  // LCDC
+    memory->address[0xFF42] = 0x00;  // SCY
+    memory->address[0xFF43] = 0x00;  // SCX
+    memory->address[0xFF45] = 0x00;  // LYC
+    memory->address[0xFF47] = 0xFC;  // BGP
+    memory->address[0xFF48] = 0xFF;  // OBP0
+    memory->address[0xFF49] = 0xFF;  // OBP1
+    memory->address[0xFF4A] = 0x00;  // WY
+    memory->address[0xFF4B] = 0x00;  // WX
+    memory->address[0xFFFF] = 0x00;  // IE
 
-    // what kinda rom switching are we using, if any?
     switch (read_memory(0x147)) {
         case 0:
             mbc1 = false;
-            break;  // not using any memory swapping
+            break;
         case 1:
         case 2:
         case 3:
@@ -83,7 +81,6 @@ void cpu::initialize(mmu* mmu) {
             break;
     }
 
-    // how many ram banks do we neeed, if any?
     int n_ram_banks = 0;
     switch (read_memory(0x149)) {
         case 0:
@@ -103,7 +100,6 @@ void cpu::initialize(mmu* mmu) {
             break;
     }
 
-    // create ram banks
     for (int i = 0; i < n_ram_banks; i++) {
         byte* ram = new byte[0x2000];
         memset(ram, 0, sizeof(ram));
@@ -334,7 +330,6 @@ void cpu::write_memory(word addr, byte data) {
     else if ((addr >= 0xFF4C) && (addr <= 0xFF7F)) {
     }
 
-    // I guess we're ok to write to memory... gulp
     else {
         memory->address[addr] = data;
     }
@@ -362,11 +357,13 @@ void cpu::key_pressed(int key) {
     }
 
     if (req_interrupt && !previously_unset) {
-        request_interrupt(4);
+        request_interrupt(INTERRUPT_JOYPAD);
     }
 };
 
-void cpu::key_released(int key) { joypad_state |= (1 << key); };
+void cpu::key_released(int key) {
+    joypad_state |= (1 << key);
+};
 
 byte cpu::get_joypad_state() {
     byte res = memory->address[0xFF00] ^ 0xFF;
@@ -397,7 +394,9 @@ void cpu::debug() {
     printf("\n");
 };
 
-void cpu::request_interrupt(int id) { memory->address[0xFF0F] |= (1 << id); };
+void cpu::request_interrupt(int id) {
+    write_memory(0xFF0F, read_memory(0xFF0F) | (1 << id));
+};
 
 void cpu::execute_interrupts() {
     if (interrupt_master) {
@@ -421,7 +420,7 @@ void cpu::execute_interrupts() {
 void cpu::service_interrupt(int id) {
     // master interrupt and the bit of the current interrupt are reset
     interrupt_master = false;
-    memory->address[0xFF0F] &= ~(1 << id);
+    write_memory(0xFF0F, read_memory(0xFF0F) & ~(1 << id));
 
     store_pc_stack();
 
@@ -445,16 +444,16 @@ void cpu::update_timers() {
     divider_counter += last_clock;
     if (divider_counter >= 255) {
         divider_counter = 0;
-        memory->address[0xFF04]++;
+        write_memory(0xFF04, read_memory(0xFF04) + 1);
     }
 
     // check if clock enabled
-    if (memory->address[0xFF07] & (1 << 2)) {
+    if (read_memory(0xFF07) & (1 << 2)) {
         time_counter -= last_clock;
 
         // enough cpu clock cycles have happened to update the timer
         if (time_counter <= 0) {
-            switch (memory->address[0xFF07] & 0x3) {
+            switch (read_memory(0xFF07) & 0x3) {
                 case 0:
                     time_counter = 1024;
                     break;  // freq 4096
@@ -469,12 +468,12 @@ void cpu::update_timers() {
                     break;  // freq 16382
             }
 
-            memory->address[0xFF05]++;
+            write_memory(0xFF05, read_memory(0xFF05) + 1);
 
             // overflow
-            if (memory->address[0xFF05] == 0) {
-                memory->address[0xFF05] = memory->address[0xFF06];
-                request_interrupt(2);
+            if (read_memory(0xFF05) == 0) {
+                write_memory(0xFF05, read_memory(0xFF06));
+                request_interrupt(INTERRUPT_TIMER);
             }
         }
     }
@@ -490,7 +489,7 @@ void cpu::subc_a_pc() {
 
 void cpu::add_hl_r16(byte r16) {
     word res = add16((registers[H] << 8) | registers[L],
-                     registers[r16] | (registers[r16 + 1] << 8));
+                     (registers[r16] << 8) | registers[r16 + 1]);
 
     registers[H] = res & 0xFF;
     registers[L] = (res & 0xFF00) >> 8;
@@ -503,46 +502,30 @@ void cpu::add_hl_sp() {
     registers[L] = (res & 0xFF00) >> 8;
 };
 
-void cpu::add_sp_pc() {
-    char n = memory->address[++pc];
-
-    set_z_flag(0);
-    set_n_flag(0);
-    if (n < 0) {
-        set_c_flag(0);  // FIXME:_ foi feito a sorte
-        set_h_flag(0);
-    } else {
-        set_c_flag(1);
-        set_h_flag(1);
-    }
-    sp += n;
-};
-
 void cpu::inc_r16(byte r16) {
-    word res = (registers[r16] | (registers[r16 + 1] << 8)) + 1;
+    word res = ((registers[r16] << 8) | registers[r16 + 1]) + 1;
     registers[r16] = res & 0xFF;
     registers[r16 + 1] = (res & 0xFF00) >> 8;
 };
 
 void cpu::dec_r16(byte r16) {
-    word res = (registers[r16] | (registers[r16 + 1] << 8)) - 1;
+    word res = ((registers[r16] << 8) | registers[r16 + 1]) - 1;
     registers[r16] = res & 0xFF;
     registers[r16 + 1] = (res & 0xFF00) >> 8;
 };
 
 void cpu::swap_r1(byte r1) {
     registers[r1] = (registers[r1] << 4) | (registers[r1] >> 4);
-    
+
     set_z_flag(registers[r1] == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
-
 };
 
 void cpu::swap_r16(byte r16) {
     byte temp = registers[r16];
-    
+
     registers[r16] = registers[r16 + 1];
     registers[r16 + 1] = temp;
 
@@ -550,7 +533,6 @@ void cpu::swap_r16(byte r16) {
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
-
 };
 
 // for rl vs rlc : http://jgmalcolm.com/z80/advanced/shif
@@ -558,7 +540,7 @@ void cpu::swap_r16(byte r16) {
 void cpu::rlc_r1(byte r1) {
     // rotates r1 to the left with bit 7 being moved to bit 0 and
     // also stored in the carry
-    
+
     byte carry = (registers[r1] & (1 << 7)) >> 7;
     registers[r1] = (registers[r1] << 1) | carry;
 
@@ -576,7 +558,7 @@ void cpu::rl_r1(byte r1) {
 
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag((registers[r1] & (1 << 7)) >> 7);
+    set_c_flag(registers[r1] & (1 << 7));
 
     registers[r1] = (registers[r1] << 1) | carry;
 
@@ -584,7 +566,6 @@ void cpu::rl_r1(byte r1) {
 };
 
 void cpu::rrc_r1(byte r1) {
-
     set_h_flag(0);
     set_n_flag(0);
     set_c_flag(registers[r1] & 0x01);
@@ -612,13 +593,14 @@ void cpu::sla_r1(byte r1) {
     set_c_flag((registers[r1] & 0x80) >> 7);
 
     registers[r1] <<= 1;
+
     set_z_flag(registers[r1] == 0);
 };
 
 void cpu::sra_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag((registers[r1] & 0x01) >> 7);
+    set_c_flag(registers[r1] & 0x01);
 
     byte last_bit = registers[r1] & 0x80;
     registers[r1] >>= 1;
@@ -638,7 +620,6 @@ void cpu::srl_r1(byte r1) {
 };
 
 void cpu::bit_r1(byte r1, byte bit) {
-
     bool n = true;
     if (r1 == 6) {
         last_clock = 16;
@@ -709,7 +690,6 @@ void cpu::ret_cc(byte cc) {
 };
 
 byte cpu::add8(byte op1, byte op2) {
-
     byte res = op1 + op2;
 
     set_z_flag(res == 0);
@@ -721,19 +701,17 @@ byte cpu::add8(byte op1, byte op2) {
 };
 
 byte cpu::sub8(byte op1, byte op2) {
-
     byte res = op1 - op2;
 
     set_z_flag(res == 0);
     set_n_flag(1);
     set_h_flag((op1 & 0x0F) < (op2 & 0x0F));
     set_c_flag(op1 < op2);
-    
+
     return res;
 };
 
 byte cpu::and8(byte op1, byte op2) {
-
     byte res = op1 & op2;
 
     set_z_flag(res == 0);
@@ -745,7 +723,6 @@ byte cpu::and8(byte op1, byte op2) {
 };
 
 byte cpu::or8(byte op1, byte op2) {
-
     byte res = op1 | op2;
 
     set_z_flag(res == 0);
@@ -757,7 +734,6 @@ byte cpu::or8(byte op1, byte op2) {
 };
 
 byte cpu::xor8(byte op1, byte op2) {
-
     byte res = op1 ^ op2;
 
     set_z_flag(res == 0);
@@ -769,16 +745,13 @@ byte cpu::xor8(byte op1, byte op2) {
 };
 
 void cpu::cp(byte op1, byte op2) {
-
     set_z_flag(op1 == op2);
     set_n_flag(1);
     set_h_flag((op1 & 0xF) < (op2 & 0xF));
-    set_c_flag(op1 < op2); 
-
+    set_c_flag(op1 < op2);
 };
 
 void cpu::inc8(byte op1) {
-
     byte res = registers[op1] + 1;
 
     set_z_flag(res == 0);
@@ -789,7 +762,6 @@ void cpu::inc8(byte op1) {
 };
 
 void cpu::dec8(byte op1) {
-
     byte res = registers[op1] - 1;
 
     set_z_flag(res == 0);
@@ -800,7 +772,6 @@ void cpu::dec8(byte op1) {
 };
 
 word cpu::add16(word op1, word op2) {
-
     set_n_flag(0);
     set_h_flag((0x0FFF & op1) + (0X0FFF & op2) > 0x0FFF);
     set_c_flag((0xFFFF - op1) < op2);
@@ -809,40 +780,37 @@ word cpu::add16(word op1, word op2) {
 };
 
 void cpu::ret() {
-    // FIXME: lets assume that the LSB is at the top of the stack
     pc = (read_memory(sp++) | (read_memory(sp++) << 8)) - 1;
-}
+};
 
 void cpu::store_pc_stack() {
     write_memory(--sp, ((pc + 1) & 0xFF00) >> 8);
     write_memory(--sp, ((pc + 1) & 0xFF));
-}
+};
 
 void cpu::push16(byte r1) {
-    // FIXME: there is a chance that the order is not correct
-    // changing the order of the lines will solve it
-    write_memory(--sp, registers[r1 + 1]);
     write_memory(--sp, registers[r1]);
-}
+    write_memory(--sp, registers[r1 + 1]);
+};
 
 void cpu::pop16(byte r1) {
     registers[r1 + 1] = read_memory(sp++);
     registers[r1] = read_memory(sp++);
-}
+};
 
-void cpu::set_z_flag(byte value) {
+void cpu::set_z_flag(bool value) {
     registers[F] = (registers[F] & ~(1 << 7)) | (value << 7);
 };
 
-void cpu::set_n_flag(byte value) {
+void cpu::set_n_flag(bool value) {
     registers[F] = (registers[F] & ~(1 << 6)) | (value << 6);
 };
 
-void cpu::set_h_flag(byte value) {
+void cpu::set_h_flag(bool value) {
     registers[F] = (registers[F] & ~(1 << 5)) | (value << 5);
 };
 
-void cpu::set_c_flag(byte value) {
+void cpu::set_c_flag(bool value) {
     registers[F] = (registers[F] & ~(1 << 4)) | (value << 4);
 };
 

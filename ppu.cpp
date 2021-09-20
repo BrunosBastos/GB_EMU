@@ -4,17 +4,21 @@
 // http://www.codeslinger.co.uk/pages/projects/gameboy/graphics.html
 // http://www.codeslinger.co.uk/pages/projects/gameboy/interupts.html
 
+
 void ppu::initialize(mmu* memory, cpu* cp) {
+
+    // TODO: change vars so that we need to use read and write memory
     this->memory = memory;
     this->cp = cp;
 
-    clock_count = 0;
+    clock_count = 456;
 
     lcd_control = &memory->address[memory->ppu];
     lcd_status = &memory->address[memory->ppu + 0x01];
     scroll_y = &memory->address[memory->ppu + 0x02];
     scroll_x = &memory->address[memory->ppu + 0x03];
-    line = &memory->address[memory->ppu + 0x04];
+    
+    line = 0xFF44;
 
     windpos_y = &memory->address[memory->ppu + 0x0A];
     windpos_x = &memory->address[memory->ppu + 0x0B];
@@ -29,7 +33,6 @@ void ppu::render_line() {
     if (get_bg_display()) {
         render_tiles();
     }
-
     if (get_obj_display_enable()) {
         render_sprites();
     }
@@ -45,16 +48,17 @@ void ppu::update_graphics() {
     }
 
     if (clock_count <= 0) {
-        (*line)++;  // increase the current line value
+        byte curr_line = cp->read_memory(line);
+        cp->write_memory(line, ++curr_line);  // increase the current line value
 
         clock_count = 456;
 
-        if (*line == 144) {
-            // request interrupt? idk what this is
-        } else if (*line > 153) {
-            // line values are between 0 and 153
-            *line = 0;
-        } else if (*line < 144) {
+        if (curr_line == 144) {
+            cp->request_interrupt(INTERRUPT_VBLANK);
+        } else if (curr_line > 153) {
+            // V-BLANK area
+            cp->write_memory(line, 0);
+        } else if (curr_line < 144) {
             // display only has 144 lines, lines between 144-153 serve otherpurposes
             render_line();
         }
@@ -65,211 +69,189 @@ void ppu::set_lcd_status() {
     if (!get_lcd_display_enable()) {
         // set the mode to 1 during lcd disabled and reset scanline
         clock_count = 456;
-        *line = 0;
+        cp->write_memory(line, 0);
         *lcd_status &= 252;
         set_mode(1);
         return;
     }
+    byte curr_line = cp->read_memory(line);
+    byte last_mode = get_mode();
 
-    byte currentmode = get_mode();
-
-    byte mode = 0;
-    bool request_interrupt = false;
+    bool req_interrupt = false;
 
     // in vblank so set mode to 1
-    if (*line >= 144) {
-        mode = 1;
+    if (curr_line >= 144) {
         set_mode(1);
-        request_interrupt = *lcd_status & 0x10;
+        req_interrupt = *lcd_status & 0x10;
     } else {
         int mode2bounds = 456 - 80;
         int mode3bounds = mode2bounds - 172;
 
         // mode 2
         if (clock_count >= mode2bounds) {
-            mode = 2;
             set_mode(2);
-            request_interrupt = *lcd_status & 0x20;
+            req_interrupt = *lcd_status & 0x20;
         }
         // mode 3
         else if (clock_count >= mode3bounds) {
-            mode = 3;
             set_mode(3);
         }
         // mode 0
         else {
-            mode = 0;
             set_mode(0);
-            request_interrupt = *lcd_status & 0x08;
+            req_interrupt = *lcd_status & 0x08;
         }
     }
 
     // just entered a new mode so request interupt
-    if (request_interrupt && (mode != currentmode))
-        ;  // TODO: RequestInterupt(1)
-
+    if (req_interrupt && (get_mode() != last_mode)) {
+        cp->request_interrupt(INTERRUPT_LCDC);
+    }
+    
     // check the coincidence flag
-    if (*line == memory->address[0xFF45]) {
+    if (curr_line == cp->read_memory(0xFF45)) {
         *lcd_status |= 0x04;
-        if (*lcd_status & 0x40)  // bit 6
-            ;                    // TODO: RequestInterupt(1)
+        if (*lcd_status & 0x40) {
+            // bit 6
+            cp->request_interrupt(INTERRUPT_LCDC);
+        }
     } else {
         *lcd_status &= ~0x04;
     }
 };
 
+void ppu::update_bg_scanline(byte curr_line) {
+    
+    word tile_map = get_bg_tile_map_select() ? 0x9C00 : 0x9800;
+    byte tile_y = *scroll_y + curr_line;
+
+    for (int pixel = 0; pixel < 160 && curr_line < 143; pixel++) {
+        byte tile_x = pixel + *scroll_x;
+        word tile_addr = tile_map + (tile_y / 8) * 32 + (tile_x / 8);
+
+        update_bg_tile(pixel, curr_line, tile_x % 8, tile_y % 8, tile_addr);
+    }
+};
+
+void ppu::update_window_scanline(byte curr_line) {
+
+    word tile_map = get_wnd_tile_map_select() ? 0x9C00 : 0x9800;
+    byte tile_y = curr_line - *windpos_x;
+
+    for (int pixel = 0; pixel < 160 && curr_line < 143; pixel++) {
+        byte tile_x = (pixel >= *windpos_x - 7) ? 
+            pixel + *scroll_x : pixel - *windpos_x - 7;
+        word tile_addr = tile_map + (tile_y / 8) * 32 + (tile_x / 8);
+
+        update_window_tile(pixel, curr_line, tile_x % 8, tile_y % 8, tile_addr);
+    }
+};
+
+void ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
+    word tile_data = get_bg_wnd_tile_data_select() ? 0x8000 : 0x8800;
+
+    word tile_location = tile_data;
+    if (tile_data == 0x8000)
+        tile_location += (byte)cp->read_memory(tile_addr) * 16;
+    else
+        tile_location += ((char)cp->read_memory(tile_addr) + 128) * 16;
+
+    // each tile has 2 bytes
+    byte data1 = cp->read_memory(tile_location + offset_y *2);
+    byte data2 = cp->read_memory(tile_location + offset_y *2 + 1);
+
+    int color_bit = -(offset_x - 7);
+    int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  // combine 2 bytes
+    int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));
+
+    buffer[pixel][curr_line] = color;
+};
+
+void ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
+    word tile_data = get_bg_wnd_tile_data_select() ? 0x8000 : 0x8800;
+
+    word tile_location = tile_data;
+    if (tile_data == 0x8000)
+        tile_location += (byte)cp->read_memory(tile_addr) * 16;
+    else
+        tile_location += ((char)cp->read_memory(tile_addr) + 128) * 16;
+
+    // each tile has 2 bytes
+    byte data1 = cp->read_memory(tile_location + 2 * offset_y);
+    byte data2 = cp->read_memory(tile_location + 2 * offset_y + 1);
+
+    int color_bit = -(offset_x - 7);
+    int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));   // combine 2 bytes
+    int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));
+
+    buffer[pixel][curr_line] = color;
+};
 
 void ppu::render_tiles() {
-    word tile_data = 0;
-    word background_memory = 0;
-    bool unsig = true;
 
-    byte windpos_x2 = *windpos_x - 7;
+    byte curr_line = cp->read_memory(line);
 
-    // is the window enabled?
-    bool using_window = (get_wnd_display_enable() && *windpos_y <= *line);
-
-    // which tile data are we using?
-    if (get_bg_wnd_tile_data_select()) {
-        tile_data = 0x8000;
-    } else {
-        tile_data = 0x8800;
-        unsig = false;
+    if(curr_line > 143) {
+        return;
     }
 
-    // which background mem?
-    if (!using_window) {
-        background_memory = get_bg_tile_map_select() ? 0x9C00 : 0x9800;
-    // which window memory?
-    } else {
-        background_memory = get_wnd_tile_map_select() ? 0x9C00 : 0x9800;
+    if(get_wnd_display_enable() && *windpos_y <= curr_line) {
+        update_window_scanline(curr_line);
     }
-
-    byte yPos = !using_window ? *scroll_y + *line : *line - *windpos_y;
-
-    // which of the 8 vertical pixels of the current
-    // tile is the scanline on?
-    word tile_row = (((byte)(yPos / 8)) * 32);
-
-    // time to start drawing the 160 horizontal pixels
-    // for this scanline
-    for (int pixel = 0; pixel < 160; pixel++) {
-
-        if ((*line < 0) || (*line > 143) || (pixel < 0) || (pixel > 159)) {
-            continue;
-        }
-
-        byte xPos = pixel + *scroll_x;
-
-        // translate the current x pos to window space if necessary
-        if (using_window) {
-            if (pixel >= windpos_x2) {
-                xPos = pixel - windpos_x2;
-            }
-        }
-        // which of the 32 horizontal tiles does this xPos fall within?
-        word tile_col = (xPos / 8);
-        short tile_num; 
-
-        // get the tile identity number. Remember it can be signed
-        // or unsigned
-        word tile_addr = background_memory + tile_row + tile_col;
-        if (unsig)
-            tile_num = (byte)memory->address[tile_addr];
-        else
-            tile_num = (char)memory->address[tile_addr];
-
-        // deduce where this tile identifier is in memory. Remember i
-        // shown this algorithm earlier
-        word tile_location = tile_data;
-
-        if (unsig)
-            tile_location += (tile_num * 16);
-        else
-            tile_location += ((tile_num + 128) * 16);
-
-        byte line_ = (yPos % 8)*2;   // each vertical line_ takes up two bytes of memory
-        byte data1 = memory->address[tile_location + line_];
-        byte data2 = memory->address[tile_location + line_ + 1];
-
-        int colour_bit = -((xPos % 8) - 7);
-
-        // combine data 2 and data 1 to get the colour id for this pixel
-        int colour_num = (data2 & (1 << colour_bit)) << 1 | (data1 & (1 << colour_bit));  
-
-        // get colour from pallete 0xFF47
-        int colour = (*pallets[0] & (1 << (2 * colour_num + 1))) << 1 | (*pallets[0] & (1 << (2 * colour_num)));
-
-        buffer[pixel][*line] = colour;
+    if(get_bg_display()) {
+        update_bg_scanline(curr_line);
     }
-}
+};
 
 void ppu::render_sprites() {
-    bool use8x16 = false;
-    if (get_obj_size()) {
-        use8x16 = true;
+
+    byte curr_line = cp->read_memory(line);
+
+    if(curr_line > 143) {
+        return;
     }
 
-    for (int sprite = 0; sprite < 40; sprite++) {
-        // sprite occupies 4 bytes in the sprite attributes table
-        byte index = sprite * 4;
-        byte yPos = memory->address[memory->oam + index] - 16;
-        byte xPos = memory->address[memory->oam + index + 1] - 8;
-        byte tile_location = memory->address[memory->oam + index + 2];
-        byte attributes = memory->address[memory->oam + index + 3];
+    // each sprite takes 4 bytes in the oam
+    for (int sprite = 0; sprite < 40 * 4; sprite += 4) {
 
-        bool yFlip = attributes & (1 << 6);
-        bool xFlip = attributes & (1 << 5);
+        byte py = cp->read_memory(memory->oam + sprite) - 16;
+        byte px = cp->read_memory(memory->oam + sprite + 1) - 8;
+        byte sprite_location = cp->read_memory(memory->oam + sprite + 2);
+        byte attributes = cp->read_memory(memory->oam + sprite + 3);
 
-        int ysize = 8;
-        if (use8x16) ysize = 16;
+        int ysize = get_obj_size() ? 16 : 8;
 
-        // does this sprite intercept with the scanline?
-        if ((*line >= yPos) && (*line < (yPos + ysize))) {
-            int line_ = *line - yPos;
+        // draw only the sprites in the curr line
+        if ((curr_line >= py) && (curr_line < (py + ysize))) {
+            int curry = curr_line - py;
 
-            // read the sprite in backwards in the y axis
-            if (yFlip) {
-                line_ = -(line_ - ysize);
+            // check if invert y axis
+            if (attributes & (1 << 6)) {
+                curry = -(curry - ysize);
             }
-            line_ *= 2;  // same as for tiles
+            curry *= 2;
 
-            word data_addr = (memory->vram + (tile_location * 16)) + line_;
-            byte data1 = memory->address[data_addr];
-            byte data2 = memory->address[data_addr + 1];
+            word data_addr = (memory->vram + (sprite_location * 16)) + curry;
+            byte data1 = cp->read_memory(data_addr);
+            byte data2 = cp->read_memory(data_addr + 1);
 
-            // its easier to read in from right to left as pixel 0 is
-            // bit 7 in the colour data, pixel 1 is bit 6 etc...
-            for (int tile_pixel = 7; tile_pixel >= 0; tile_pixel--) {
-                int colour_bit = tile_pixel;
+            for (int sprite_pixel = 0; sprite_pixel < 8; sprite_pixel++) {
+                int color_bit = sprite_pixel;
+                int pixel = px + 7 - sprite_pixel;
 
-                int xPix = 0 - tile_pixel;
-                xPix += 7;
-
-                int pixel = xPos + xPix;
-
-                // sanity check
-                if ((*line < 0) || (*line > 143) || (pixel < 0) ||
-                    (pixel > 159)) {
-                    continue;
+                // check if invert x axis
+                if (attributes & (1 << 5)) {
+                    color_bit = -(color_bit - 7);
                 }
 
-                // read the sprite in backwards for the x axis
-                if (xFlip) {
-                    colour_bit -= 7;
-                    colour_bit *= -1;
-                }
+                int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  
+                byte p = attributes & (1 << 4) ? 2 : 1;     // choose the pallet
+                int color = (*pallets[p] & (1 << (2 * color_num + 1))) << 1 | (*pallets[p] & (1 << (2 * color_num)));
 
-                // the rest is the same as for tiles
-                int colour_num = (data2 & (1 << colour_bit)) << 1 | (data1 & (1 << colour_bit));  
+                // white is transparent
+                if (color == WHITE) continue;
 
-                byte p = attributes & (1 << 4) ? 2 : 1;
-                int colour = (*pallets[p] & (1 << (2 * colour_num + 1))) << 1 | (*pallets[p] & (1 << (2 * colour_num)));
-
-                // white is transparent for sprites.
-                if (colour == WHITE) continue;
-
-                buffer[pixel][*line] = colour;
+                buffer[pixel][curr_line] = color;
             }
         }
     }
