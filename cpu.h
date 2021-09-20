@@ -13,7 +13,6 @@
 #define L 7
 
 
-
 class cpu {
 
     public:
@@ -186,16 +185,15 @@ class cpu {
         word dec16(word op1);
 
 
-        void set_z_flag(byte value);
-        void set_n_flag(byte value);
-        void set_h_flag(byte value);
-        void set_c_flag(byte value);
+        void set_z_flag(bool value);
+        void set_n_flag(bool value);
+        void set_h_flag(bool value);
+        void set_c_flag(bool value);
 
         bool get_z_flag();
         bool get_n_flag();
         bool get_h_flag();
         bool get_c_flag();
-
 };
 
 #endif
