@@ -1287,7 +1287,7 @@ void op_F8(mmu* memory, cpu* cp) {
 
     cp->set_z_flag(0);
     cp->set_n_flag(0);
-    cp->set_h_flag((spn & 0xF) < (cp->sp & 0xF));       // FIXME: not sure if this solves
+    cp->set_h_flag((spn & 0xF) < (cp->sp & 0xF));
     cp->set_c_flag((spn & 0xFF) < (cp->sp & 0xFF));
 };
 

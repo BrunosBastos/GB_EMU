@@ -489,7 +489,7 @@ void cpu::subc_a_pc() {
 };
 
 void cpu::add_hl_r16(byte r16) {
-    word res = add16(registers[H] | (registers[L] << 8),
+    word res = add16((registers[H] << 8) | registers[L],
                      registers[r16] | (registers[r16 + 1] << 8));
 
     registers[H] = res & 0xFF;
@@ -497,7 +497,7 @@ void cpu::add_hl_r16(byte r16) {
 };
 
 void cpu::add_hl_sp() {
-    word res = add16(registers[H] | (registers[L] << 8), sp);
+    word res = add16((registers[H] << 8) | registers[L], sp);
 
     registers[H] = res & 0xFF;
     registers[L] = (res & 0xFF00) >> 8;
@@ -572,102 +572,93 @@ void cpu::rl_r1(byte r1) {
     // rotates r1 to the left with the carry's value put into bit
     // 0 and bit 7 is put into the carry
 
-    set_n_flag(0);
-    set_h_flag(0);
     byte carry = get_c_flag();
 
+    set_n_flag(0);
+    set_h_flag(0);
     set_c_flag((registers[r1] & (1 << 7)) >> 7);
 
     registers[r1] = (registers[r1] << 1) | carry;
-    if (registers[r1] == 0) set_z_flag(1);
+
+    set_z_flag(registers[r1] == 0);
 };
 
 void cpu::rrc_r1(byte r1) {
-    set_n_flag(0);
-    set_h_flag(0);
 
+    set_h_flag(0);
+    set_n_flag(0);
     set_c_flag(registers[r1] & 0x01);
+
     byte carry = get_c_flag();
     registers[r1] = (registers[r1] >> 1) | (carry << 7);
 
-    if (registers[r1] == 0) set_z_flag(1);
+    set_z_flag(registers[r1] == 0);
 };
 
 void cpu::rr_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
-    byte carry = get_c_flag();
     set_c_flag(registers[r1] & 0x01);
- 
+
+    byte carry = get_c_flag();
     registers[r1] = (registers[r1] >> 1) | (carry << 7);
-    if (registers[r1] == 0) set_z_flag(1);
+
+    set_z_flag(registers[r1] == 0);
 };
 
 void cpu::sla_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
-
-    if (registers[r1] & 0x80)
-        set_c_flag(1);
-    else
-        set_c_flag(0);
+    set_c_flag((registers[r1] & 0x80) >> 7);
 
     registers[r1] <<= 1;
-    if (registers[r1] == 0) set_z_flag(1);
+    set_z_flag(registers[r1] == 0);
 };
 
 void cpu::sra_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
-
-    if (registers[r1] & 0x01)
-        set_c_flag(1);
-    else
-        set_c_flag(0);
+    set_c_flag((registers[r1] & 0x01) >> 7);
 
     byte last_bit = registers[r1] & 0x80;
     registers[r1] >>= 1;
     registers[r1] |= last_bit;
 
-    if (registers[r1] == 0) set_z_flag(1);
+    set_z_flag(registers[r1] == 0);
 };
 
 void cpu::srl_r1(byte r1) {
     set_n_flag(0);
     set_h_flag(0);
-    if (registers[r1] & 0x01)
-        set_c_flag(1);
-    else
-        set_c_flag(0);
+    set_c_flag(registers[r1] & 0x01);
 
     registers[r1] >>= 1;
 
-    if (registers[r1] == 0) set_z_flag(1);
+    set_z_flag(registers[r1] == 0);
 };
 
 void cpu::bit_r1(byte r1, byte bit) {
-    set_n_flag(0);
-    set_h_flag(1);
 
     bool n = true;
     if (r1 == 6) {
-        // FIXME: not sure if the its the addr or the values of reg
         last_clock = 16;
-        n = (memory->address[registers[H] | (registers[L] << 8)]) & (1 << bit);
+        n = (read_memory((registers[H] << 8) | registers[L])) & (1 << bit);
     } else if (r1 == 7) {
         n = registers[A] & (1 << bit);
     } else {
         n = registers[r1 + 2] & (1 << bit);
     }
 
-    if (!n) set_z_flag(1);
+    set_z_flag(!n);
+    set_n_flag(0);
+    set_h_flag(1);
 };
 
 void cpu::set_r1(byte r1, byte bit) {
     if (r1 == 6) {
-        // FIXME: not sure if the its the addr or the values of reg
         last_clock = 16;
-        memory->address[registers[H] | (registers[L] << 8)] |= (1 << bit);
+        word hl = (registers[H] << 8) | registers[L];
+        write_memory(hl, read_memory(hl) | (1 << bit));
     } else if (r1 == 7) {
         registers[A] |= (1 << bit);
     } else {
@@ -677,9 +668,9 @@ void cpu::set_r1(byte r1, byte bit) {
 
 void cpu::res_r1(byte r1, byte bit) {
     if (r1 == 6) {
-        // FIXME: not sure if the its the addr or the values of reg
         last_clock = 16;
-        memory->address[registers[H] | (registers[L] << 8)] &= ~(1 << bit);
+        word hl = (registers[H] << 8) | registers[L];
+        write_memory(hl, read_memory(hl) & ~(1 << bit));
     } else if (r1 == 7) {
         registers[A] &= ~(1 << bit);
     } else {
@@ -688,8 +679,7 @@ void cpu::res_r1(byte r1, byte bit) {
 };
 
 void cpu::call_cc_nn(byte cc) {
-    word nn =
-        memory->address[memory->address[++pc] | (memory->address[++pc] << 8)];
+    word nn = read_memory(++pc) | (read_memory(++pc) << 8);
 
     if (cc == 0 && !get_z_flag()) {
         store_pc_stack();
@@ -736,8 +726,8 @@ byte cpu::sub8(byte op1, byte op2) {
 
     set_z_flag(res == 0);
     set_n_flag(1);
-    set_h_flag((op2 & 0x0F) < (op1 & 0x0F));
-    set_c_flag(op2 < op1);
+    set_h_flag((op1 & 0x0F) < (op2 & 0x0F));
+    set_c_flag(op1 < op2);
     
     return res;
 };
@@ -779,10 +769,6 @@ byte cpu::xor8(byte op1, byte op2) {
 };
 
 void cpu::cp(byte op1, byte op2) {
-    // FIXME: manual says this is the same as performing
-    // A - n but if that is true then the flags
-    // should be set if A > n, since there is no borrow
-    // from this operation
 
     set_z_flag(op1 == op2);
     set_n_flag(1);
