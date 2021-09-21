@@ -32,7 +32,7 @@ class ppu {
         byte *windpos_x;
         byte *windpos_y;
 
-        word line;
+        byte *line;
 
         int clock_count;
 

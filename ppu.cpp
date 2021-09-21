@@ -7,7 +7,6 @@
 
 void ppu::initialize(mmu* memory, cpu* cp) {
 
-    // TODO: change vars so that we need to use read and write memory
     this->memory = memory;
     this->cp = cp;
 
@@ -17,8 +16,7 @@ void ppu::initialize(mmu* memory, cpu* cp) {
     lcd_status = &memory->address[memory->ppu + 0x01];
     scroll_y = &memory->address[memory->ppu + 0x02];
     scroll_x = &memory->address[memory->ppu + 0x03];
-    
-    line = 0xFF44;
+    line = &memory->address[memory->ppu + 0x04];
 
     windpos_y = &memory->address[memory->ppu + 0x0A];
     windpos_x = &memory->address[memory->ppu + 0x0B];
@@ -41,15 +39,15 @@ void ppu::render_line() {
 void ppu::update_graphics() {
     set_lcd_status();
 
-    if (get_lcd_display_enable()) {
-        clock_count -= cp->last_clock;
-    } else {
+    if (!get_lcd_display_enable()) {
         return;
     }
+ 
+    clock_count -= cp->last_clock;
 
     if (clock_count <= 0) {
-        byte curr_line = cp->read_memory(line);
-        cp->write_memory(line, ++curr_line);  // increase the current line value
+        byte curr_line = ++(*line);
+        printf("curr_line : %d\n", curr_line);
 
         clock_count = 456;
 
@@ -57,9 +55,8 @@ void ppu::update_graphics() {
             cp->request_interrupt(INTERRUPT_VBLANK);
         } else if (curr_line > 153) {
             // V-BLANK area
-            cp->write_memory(line, 0);
+            *line = 0;
         } else if (curr_line < 144) {
-            // display only has 144 lines, lines between 144-153 serve otherpurposes
             render_line();
         }
     }
@@ -69,46 +66,42 @@ void ppu::set_lcd_status() {
     if (!get_lcd_display_enable()) {
         // set the mode to 1 during lcd disabled and reset scanline
         clock_count = 456;
-        cp->write_memory(line, 0);
+        *line = 0;
         *lcd_status &= 252;
         set_mode(1);
         return;
     }
-    byte curr_line = cp->read_memory(line);
+    byte curr_line = *line;
     byte last_mode = get_mode();
 
     bool req_interrupt = false;
 
-    // in vblank so set mode to 1
     if (curr_line >= 144) {
+        // V-BLANK area
         set_mode(1);
         req_interrupt = *lcd_status & 0x10;
     } else {
         int mode2bounds = 456 - 80;
         int mode3bounds = mode2bounds - 172;
 
-        // mode 2
         if (clock_count >= mode2bounds) {
             set_mode(2);
             req_interrupt = *lcd_status & 0x20;
         }
-        // mode 3
         else if (clock_count >= mode3bounds) {
             set_mode(3);
         }
-        // mode 0
         else {
             set_mode(0);
             req_interrupt = *lcd_status & 0x08;
         }
     }
 
-    // just entered a new mode so request interupt
+    // request interrupt if mode is different
     if (req_interrupt && (get_mode() != last_mode)) {
         cp->request_interrupt(INTERRUPT_LCDC);
     }
     
-    // check the coincidence flag
     if (curr_line == cp->read_memory(0xFF45)) {
         *lcd_status |= 0x04;
         if (*lcd_status & 0x40) {
@@ -189,7 +182,7 @@ void ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
 
 void ppu::render_tiles() {
 
-    byte curr_line = cp->read_memory(line);
+    byte curr_line = *line;
 
     if(curr_line > 143) {
         return;
@@ -205,7 +198,7 @@ void ppu::render_tiles() {
 
 void ppu::render_sprites() {
 
-    byte curr_line = cp->read_memory(line);
+    byte curr_line = *line;
 
     if(curr_line > 143) {
         return;

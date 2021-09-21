@@ -35,6 +35,7 @@ void cpu::initialize(mmu* mmu) {
     memory->address[0xFF05] = 0x00;  // TIMA
     memory->address[0xFF06] = 0x00;  // TMA
     memory->address[0xFF07] = 0x00;  // TAC
+    memory->address[0xFF0F] = 0xE1;  // FIXME: IF
     memory->address[0xFF10] = 0x80;  // NR10
     memory->address[0xFF11] = 0xBF;  // NR11
     memory->address[0xFF12] = 0xF3;  // NR12
@@ -309,8 +310,7 @@ void cpu::write_memory(word addr, byte data) {
         }
     }
 
-    // FF44 shows which horizontal scanline is currently being draw. Writing
-    // here resets it
+    // line
     else if (addr == 0xFF44) {
         memory->address[0xFF44] = 0;
     }
@@ -425,26 +425,28 @@ void cpu::service_interrupt(int id) {
     store_pc_stack();
 
     switch (id) {
-        case 0:
+        case INTERRUPT_VBLANK:
             pc = 0x40;
             break;
-        case 1:
+        case INTERRUPT_LCDC:
             pc = 0x48;
             break;
-        case 2:
+        case INTERRUPT_TIMER:
             pc = 0x50;
             break;
-        case 4:
+        case INTERRUPT_JOYPAD:
             pc = 0x60;
             break;
     }
 };
 
 void cpu::update_timers() {
+    
     divider_counter += last_clock;
-    if (divider_counter >= 255) {
+
+    if (divider_counter >= 256) {
         divider_counter = 0;
-        write_memory(0xFF04, read_memory(0xFF04) + 1);
+        memory->address[0xFF04]++;
     }
 
     // check if clock enabled
@@ -468,11 +470,11 @@ void cpu::update_timers() {
                     break;  // freq 16382
             }
 
-            write_memory(0xFF05, read_memory(0xFF05) + 1);
+            memory->address[0xFF05]++;
 
             // overflow
-            if (read_memory(0xFF05) == 0) {
-                write_memory(0xFF05, read_memory(0xFF06));
+            if (memory->address[0xFF05] == 0) {
+                memory->address[0xFF05] = read_memory(0xFF06);
                 request_interrupt(INTERRUPT_TIMER);
             }
         }

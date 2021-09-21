@@ -8,7 +8,6 @@
 
 SDL_Renderer *renderer;
 
-#define debug 0
 
 void sdl_init() {
     SDL_Init(SDL_INIT_VIDEO);
@@ -127,36 +126,24 @@ int main() {
 
     bool running = true;
     while (running) {
-        // for(int i=0; i < 200; i++) {
-        // printf("--------- %i ---------\n", i);
+
+        int startMs = SDL_GetTicks();
         cp->emulate_cycle();
         p->update_graphics();
         update_screen(p);
         cp->execute_interrupts();
-        int startMs = SDL_GetTicks();
-
-        char str[7];
-        while (debug) {
-            scanf("%s", str);
-            if (strcmp("c", str) == 0) {
-                break;
-            } else if (strcmp("e", str) == 0) {
-                exit(0);
-            } else {
-                printf("[%04s]: %02x\n", str,
-                       m->address[strtol(str, NULL, 16)]);
-            }
-        }
 
         while (SDL_PollEvent(&event)) { 
             handle_input(cp, event);
             if (event.type == SDL_QUIT) {
                 running = false;
+                break;
             }
         }
 
         int endMs = SDL_GetTicks();
-        SDL_Delay(60 - (endMs - startMs));
+        SDL_Delay(16 - (endMs - startMs));
+        printf("fps=%d\n", (int)(1000/(SDL_GetTicks()-startMs)));
     }
     return 0;
 };
