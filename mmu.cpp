@@ -2,7 +2,7 @@
 #include <cstring>
 
 Mmu::Mmu(Cartridge *c) { 
-    memcpy(address, c->rom, 0x8000);
+
     joypad_state = 0xFF;
 
 	// Assign memory controller based on cartridge specification
@@ -29,21 +29,76 @@ Mmu::Mmu(Cartridge *c) {
 			break;
 	}
 
+    address = c->rom;
+
+    address[0xFF05] = 0x00;  // TIMA
+    address[0xFF06] = 0x00;  // TMA
+    address[0xFF07] = 0x00;  // TAC
+    //address[0xFF0F] = 0xE1;  // FIXME: IF
+    address[0xFF10] = 0x80;  // NR10
+    address[0xFF11] = 0xBF;  // NR11
+    address[0xFF12] = 0xF3;  // NR12
+    address[0xFF14] = 0xBF;  // NR14
+    address[0xFF16] = 0x3F;  // NR21
+    address[0xFF17] = 0x00;  // NR22
+    address[0xFF19] = 0xBF;  // NR24
+    address[0xFF1A] = 0x7F;  // NR30
+    address[0xFF1B] = 0xFF;  // NR31
+    address[0xFF1C] = 0x9F;  // NR32
+    address[0xFF1E] = 0xBF;  // NR33
+    address[0xFF20] = 0xFF;  // NR41
+    address[0xFF21] = 0x00;  // NR42
+    address[0xFF22] = 0x00;  // NR43
+    address[0xFF23] = 0xBF;  // NR30
+    address[0xFF24] = 0x77;  // NR50
+    address[0xFF25] = 0xF3;  // NR51
+    address[0xFF26] = 0xF1;  // GB
+    address[0xFF40] = 0x91;  // LCDC
+    address[0xFF42] = 0x00;  // SCY
+    address[0xFF43] = 0x00;  // SCX
+    address[0xFF45] = 0x00;  // LYC
+    address[0xFF47] = 0xFC;  // BGP
+    address[0xFF48] = 0xFF;  // OBP0
+    address[0xFF49] = 0xFF;  // OBP1
+    address[0xFF4A] = 0x00;  // WY
+    address[0xFF4B] = 0x00;  // WX
+    address[0xFFFF] = 0x00;  // IE
+
+
+    P1   = MemoryRegister(&address[0xFF00]);
+	DIV  = MemoryRegister(&address[0xFF04]);
+	TIMA = MemoryRegister(&address[0xFF05]);
+	TMA  = MemoryRegister(&address[0xFF06]);
+	TAC  = MemoryRegister(&address[0xFF07]);
+	LCDC = MemoryRegister(&address[0xFF40]);
+	STAT = MemoryRegister(&address[0xFF41]);
+	SCY  = MemoryRegister(&address[0xFF42]);
+	SCX  = MemoryRegister(&address[0xFF43]);
+	LY   = MemoryRegister(&address[0xFF44]);
+	LYC  = MemoryRegister(&address[0xFF45]);
+	DMA  = MemoryRegister(&address[0xFF46]);
+	BGP  = MemoryRegister(&address[0xFF47]);
+	OBP0 = MemoryRegister(&address[0xFF48]);
+	OBP1 = MemoryRegister(&address[0xFF49]);
+	WY   = MemoryRegister(&address[0xFF4A]);
+	WX   = MemoryRegister(&address[0xFF4B]);
+	IF   = MemoryRegister(&address[0xFF0F]);
+	IE   = MemoryRegister(&address[0xFFFF]);
+    
 };
 
 byte Mmu::read_memory(word addr) {
     // reading from rom bank
     if (addr >= 0x4000 && addr <= 0x7FFF) {
-        unsigned int new_Address = addr;
-        new_Address += ((current_rom_bank - 1) * 0x4000);
-        return cart->rom[new_Address];
+       return mbc->read(addr);
     }
+
     // reading from RAM Bank
     else if (addr >= 0xA000 && addr <= 0xBFFF) {
-        // WORD new_Address = addr - 0xA000;
-        // return m_RamBank.at(current_ram_bank)[new_Address];
+        return mbc->read(addr);
     }
-    // trying to read joypad state
+
+    // joypad state
     else if (addr == 0xFF00)
         return get_joypad_state();
 
@@ -62,114 +117,22 @@ byte Mmu::get_joypad_state() {
         res &= ((joypad_state & 0xF) | 0xF0);
     }
     return res;
-}
-
+};
 
 void Mmu::write_memory(word addr, byte data) {
-    // writing to memory addr 0x0 to 0x1FFF this disables writing to the ram
-    // bank. 0 disables, 0xA enables
-    if (addr <= 0x1FFF) {
-        if (mbc1) {
-            if ((data & 0xF) == 0xA)
-                enable_ram_bank = true;
-            else if (data == 0x0)
-                enable_ram_bank = false;
-        } else if (mbc2) {
-            // bit 0 of upper byte must be 0
-            if (!(addr & 0x10)) {
-                if ((data & 0xF) == 0xA)
-                    enable_ram_bank = true;
-                else if (data == 0x0)
-                    enable_ram_bank = false;
-            }
-        }
+    
+    if (addr >= 0x0000 && addr <= 0xBFFF) {
+        mbc->write(addr, data);
     }
-
-    // if writing to a memory addr between 2000 and 3FFF then we need to
-    // change rom bank
-    else if ((addr >= 0x2000) && (addr <= 0x3FFF)) {
-        if (mbc1) {
-            if (data == 0x00) data++;
-
-            data &= 31;
-
-            // Turn off the lower 5-bits.
-            current_rom_bank &= 224;
-
-            // Combine the written data with the register.
-            current_rom_bank |= data;
-
-            printf("Changing Rom Bank to %d", current_rom_bank);
-        } else if (mbc2) {
-            data &= 0xF;
-            current_rom_bank = data;
-        }
-    }
-
-    // writing to addr 0x4000 to 0x5FFF switches ram banks (if enabled of
-    // course)
-    else if ((addr >= 0x4000) && (addr <= 0x5FFF)) {
-        if (mbc1) {
-            // are we using memory model 16/8
-            if (using16_8_model) {
-                // in this mode we can only use Ram Bank 0
-                current_ram_bank = 0;
-
-                data &= 3;
-                data <<= 5;
-
-                if ((current_rom_bank & 31) == 0) {
-                    data++;
-                }
-
-                // Turn off bits 5 and 6, and 7 if it somehow got turned on.
-                current_rom_bank &= 31;
-
-                // Combine the written data with the register.
-                current_rom_bank |= data;
-
-                printf("Changing Rom Bank to %d", current_rom_bank);
-            } else {
-                current_ram_bank = data & 0x3;
-                printf("=====Changing Ram Bank to %d=====", current_ram_bank);
-            }
-        }
-    }
-
-    // writing to addr 0x6000 to 0x7FFF switches memory model
-    else if ((addr >= 0x6000) && (addr <= 0x7FFF)) {
-        if (mbc1) {
-            // we're only interested in the first bit
-            data &= 1;
-            if (data == 1) {
-                current_ram_bank = 0;
-                using16_8_model = false;
-            } else
-                using16_8_model = true;
-        }
-    }
-
-    // from now on we're writing to RAM
-
-    else if ((addr >= 0xA000) && (addr <= 0xBFFF)) {
-        if (enable_ram_bank) {
-            if (mbc1) {
-                word new_addr = addr - 0xA000;
-                memory->ram_banks.at(current_ram_bank)[new_addr] = data;
-            }
-        } else if (mbc2 && (addr < 0xA200)) {
-            word new_addr = addr - 0xA000;
-            memory->ram_banks.at(current_ram_bank)[new_addr] = data;
-        }
-
-    }
-
-    // we're right to internal RAM, remember that it needs to echo it
-    else if ((addr >= 0xC000) && (addr <= 0xDFFF)) {
+    // internal ram
+    else if ((addr >= 0xC000) && (addr <= 0xDE00)) {
         address[addr] = data;
+        address[addr + 0x2000] = data;
     }
-
-    // echo memory. Writes here and into the internal ram. Same as above
+    else if ((addr > 0xDE00) && (addr <= 0xDFFF)) {
+        address[addr] = data;       // does not echo to echo ram
+    }
+    // echo ram
     else if ((addr >= 0xE000) && (addr <= 0xFDFF)) {
         address[addr] = data;
         address[addr - 0x2000] = data;  // echo data into ram addr
@@ -181,55 +144,32 @@ void Mmu::write_memory(word addr, byte data) {
 
     // reset the divider register
     else if (addr == 0xFF04) {
-        address[0xFF04] = 0;
-        divider_counter = 0;
+        DIV.set(0);
+        // address[0xFF04] = 0;
     }
 
-    // not sure if this is correct
     else if (addr == 0xFF07) {
-        address[addr] = data;
 
-        int timerVal = data & 0x03;
-
-        int clockSpeed = 0;
-
-        switch (timerVal) {
-            case 0:
-                clockSpeed = 1024;
-                break;
-            case 1:
-                clockSpeed = 16;
-                break;
-            case 2:
-                clockSpeed = 64;
-                break;
-            case 3:
-                clockSpeed = 256;
-                break;  // 256
-            default:
-                assert(false);
-                break;  // weird timer val
+        if (TAC.get() != data & 0x03) {
+            TIMA.set(0);
         }
-
-        if (clockSpeed != current_clock_speed) {
-            time_counter = 0;
-            current_clock_speed = clockSpeed;
-        }
+        TAC.set(data);
     }
 
     // line
     else if (addr == 0xFF44) {
-        address[0xFF44] = 0;
+        LY.set(0);
     }
 
     else if (addr == 0xFF45) {
-        address[addr] = data;
+        LYC.set(data);
     }
     // DMA transfer
     else if (addr == 0xFF46) {
+        DMA.set(data);
         word new_addr = (data << 8);
         for (int i = 0; i < 0xA0; i++) {
-            address[0xFE00 + i] = read_memory(new_addr + i);
+            write_memory(0xFE00 + i, read_memory(new_addr + i));
         }
     }
 

@@ -8,7 +8,7 @@ class Mmu {
 
     public:
 
-        byte address[0x10000];
+        byte *address;
         byte joypad_state;
         MemoryController *mbc; 
 
@@ -17,6 +17,12 @@ class Mmu {
         void write_memory(word addr, byte value);
         byte get_joypad_state();
 
+        MemoryRegister
+			P1,
+			DIV, TIMA, TMA, TAC,
+			LCDC, STAT, SCY, SCX, LYC, LY, DMA,
+			BGP, OBP0, OBP1, WY, WX,
+			IF, IE;
 
         unsigned short rom[2] = {0x0000, 0x4000};   // ROM banks, there are 2 of size 16kB
         unsigned short vram = 0x8000;               // video RAM $8000-9FFF

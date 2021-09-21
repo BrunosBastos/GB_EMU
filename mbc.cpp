@@ -171,6 +171,8 @@ byte MemoryController3::read(word addr) {
 
 void MemoryController3::write(word addr, byte data) {
     
+    // https://gbdev.gg8.se/wiki/articles/MBC3
+
     if (addr >= 0x0000 && addr <= 0x1FFF) {
         enable_ram_access = (data & 0xF) == 0xA;
         RTC_enabled = enable_ram_access;

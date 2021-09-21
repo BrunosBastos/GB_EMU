@@ -27,19 +27,10 @@ class Cpu {
         int divider_counter;
         int current_clock_speed;
         
-        byte joypad_state;
 
         byte registers[8];          // A-F B-C D-E H-L
 
         word sp;
-
-        byte current_rom_bank;
-        byte current_ram_bank;
-        bool mbc1;
-        bool mbc2;
-        bool mbc3;
-        bool enable_ram_bank;
-        bool using16_8_model;
 
 
         bool interrupt_master;
