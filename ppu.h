@@ -1,5 +1,4 @@
-#ifndef _PPU_H_
-#define _PPU_H_
+#pragma once
 
 #include "types.h"
 #include "mmu.h"
@@ -20,11 +19,9 @@
 #define BLACK 3
 
 
-class ppu {
-
+class Ppu {
 
     public:
-
         byte *lcd_control; 
         byte *lcd_status; 
         byte *scroll_x;
@@ -40,11 +37,10 @@ class ppu {
 
         byte *pallets[3];
 
-        mmu* memory;
-        cpu* cp;
+        Mmu* mmu;
+        
 
-        void initialize(mmu* memory, cpu* cp);
-        void update_graphics();
+        Ppu(Mmu* memory);
         void render_line();
         void render_sprites();
         void render_tiles();
@@ -54,7 +50,6 @@ class ppu {
         void update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr);
         void update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr);
 
-        void set_lcd_status();
         void set_mode(int mode);
         byte get_mode();
 
@@ -85,7 +80,4 @@ class ppu {
         // OBJ Size(0=8x8, 1=8x16)
         // OBJ Display Enable(0=OFF, 1=ON)
         // Bg Display(0=OFF, 1=ON)
-
 };
-
-#endif

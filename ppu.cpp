@@ -5,11 +5,9 @@
 // http://www.codeslinger.co.uk/pages/projects/gameboy/interupts.html
 
 
-void ppu::initialize(mmu* memory, cpu* cp) {
+Ppu::Ppu(Mmu* memory) {
 
-    this->memory = memory;
-    this->cp = cp;
-
+    this->mmu = memory;
     clock_count = 456;
 
     lcd_control = &memory->address[memory->ppu];
@@ -26,7 +24,7 @@ void ppu::initialize(mmu* memory, cpu* cp) {
     pallets[2] = &memory->address[0xFF49];
 };
 
-void ppu::render_line() {
+void Ppu::render_line() {
     
     if (get_bg_display()) {
         render_tiles();
@@ -36,84 +34,8 @@ void ppu::render_line() {
     }
 };
 
-void ppu::update_graphics() {
-    set_lcd_status();
 
-    if (!get_lcd_display_enable()) {
-        return;
-    }
- 
-    clock_count -= cp->last_clock;
-
-    if (clock_count <= 0) {
-        byte curr_line = ++(*line);
-        printf("curr_line : %d\n", curr_line);
-
-        clock_count = 456;
-
-        if (curr_line == 144) {
-            cp->request_interrupt(INTERRUPT_VBLANK);
-        } else if (curr_line > 153) {
-            // V-BLANK area
-            *line = 0;
-        } else if (curr_line < 144) {
-            render_line();
-        }
-    }
-};
-
-void ppu::set_lcd_status() {
-    if (!get_lcd_display_enable()) {
-        // set the mode to 1 during lcd disabled and reset scanline
-        clock_count = 456;
-        *line = 0;
-        *lcd_status &= 252;
-        set_mode(1);
-        return;
-    }
-    byte curr_line = *line;
-    byte last_mode = get_mode();
-
-    bool req_interrupt = false;
-
-    if (curr_line >= 144) {
-        // V-BLANK area
-        set_mode(1);
-        req_interrupt = *lcd_status & 0x10;
-    } else {
-        int mode2bounds = 456 - 80;
-        int mode3bounds = mode2bounds - 172;
-
-        if (clock_count >= mode2bounds) {
-            set_mode(2);
-            req_interrupt = *lcd_status & 0x20;
-        }
-        else if (clock_count >= mode3bounds) {
-            set_mode(3);
-        }
-        else {
-            set_mode(0);
-            req_interrupt = *lcd_status & 0x08;
-        }
-    }
-
-    // request interrupt if mode is different
-    if (req_interrupt && (get_mode() != last_mode)) {
-        cp->request_interrupt(INTERRUPT_LCDC);
-    }
-    
-    if (curr_line == cp->read_memory(0xFF45)) {
-        *lcd_status |= 0x04;
-        if (*lcd_status & 0x40) {
-            // bit 6
-            cp->request_interrupt(INTERRUPT_LCDC);
-        }
-    } else {
-        *lcd_status &= ~0x04;
-    }
-};
-
-void ppu::update_bg_scanline(byte curr_line) {
+void Ppu::update_bg_scanline(byte curr_line) {
     
     word tile_map = get_bg_tile_map_select() ? 0x9C00 : 0x9800;
     byte tile_y = *scroll_y + curr_line;
@@ -126,7 +48,7 @@ void ppu::update_bg_scanline(byte curr_line) {
     }
 };
 
-void ppu::update_window_scanline(byte curr_line) {
+void Ppu::update_window_scanline(byte curr_line) {
 
     word tile_map = get_wnd_tile_map_select() ? 0x9C00 : 0x9800;
     byte tile_y = curr_line - *windpos_x;
@@ -140,18 +62,18 @@ void ppu::update_window_scanline(byte curr_line) {
     }
 };
 
-void ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
+void Ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
     word tile_data = get_bg_wnd_tile_data_select() ? 0x8000 : 0x8800;
 
     word tile_location = tile_data;
     if (tile_data == 0x8000)
-        tile_location += (byte)cp->read_memory(tile_addr) * 16;
+        tile_location += (byte)mmu->read_memory(tile_addr) * 16;
     else
-        tile_location += ((char)cp->read_memory(tile_addr) + 128) * 16;
+        tile_location += ((char)mmu->read_memory(tile_addr) + 128) * 16;
 
     // each tile has 2 bytes
-    byte data1 = cp->read_memory(tile_location + offset_y *2);
-    byte data2 = cp->read_memory(tile_location + offset_y *2 + 1);
+    byte data1 = mmu->read_memory(tile_location + offset_y *2);
+    byte data2 = mmu->read_memory(tile_location + offset_y *2 + 1);
 
     int color_bit = -(offset_x - 7);
     int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  // combine 2 bytes
@@ -160,18 +82,18 @@ void ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, w
     buffer[pixel][curr_line] = color;
 };
 
-void ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
+void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
     word tile_data = get_bg_wnd_tile_data_select() ? 0x8000 : 0x8800;
 
     word tile_location = tile_data;
     if (tile_data == 0x8000)
-        tile_location += (byte)cp->read_memory(tile_addr) * 16;
+        tile_location += (byte)mmu->read_memory(tile_addr) * 16;
     else
-        tile_location += ((char)cp->read_memory(tile_addr) + 128) * 16;
+        tile_location += ((char)mmu->read_memory(tile_addr) + 128) * 16;
 
     // each tile has 2 bytes
-    byte data1 = cp->read_memory(tile_location + 2 * offset_y);
-    byte data2 = cp->read_memory(tile_location + 2 * offset_y + 1);
+    byte data1 = mmu->read_memory(tile_location + 2 * offset_y);
+    byte data2 = mmu->read_memory(tile_location + 2 * offset_y + 1);
 
     int color_bit = -(offset_x - 7);
     int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));   // combine 2 bytes
@@ -180,7 +102,7 @@ void ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
     buffer[pixel][curr_line] = color;
 };
 
-void ppu::render_tiles() {
+void Ppu::render_tiles() {
 
     byte curr_line = *line;
 
@@ -196,7 +118,7 @@ void ppu::render_tiles() {
     }
 };
 
-void ppu::render_sprites() {
+void Ppu::render_sprites() {
 
     byte curr_line = *line;
 
@@ -207,10 +129,10 @@ void ppu::render_sprites() {
     // each sprite takes 4 bytes in the oam
     for (int sprite = 0; sprite < 40 * 4; sprite += 4) {
 
-        byte py = cp->read_memory(memory->oam + sprite) - 16;
-        byte px = cp->read_memory(memory->oam + sprite + 1) - 8;
-        byte sprite_location = cp->read_memory(memory->oam + sprite + 2);
-        byte attributes = cp->read_memory(memory->oam + sprite + 3);
+        byte py = mmu->read_memory(mmu->oam + sprite) - 16;
+        byte px = mmu->read_memory(mmu->oam + sprite + 1) - 8;
+        byte sprite_location = mmu->read_memory(mmu->oam + sprite + 2);
+        byte attributes = mmu->read_memory(mmu->oam + sprite + 3);
 
         int ysize = get_obj_size() ? 16 : 8;
 
@@ -224,9 +146,9 @@ void ppu::render_sprites() {
             }
             curry *= 2;
 
-            word data_addr = (memory->vram + (sprite_location * 16)) + curry;
-            byte data1 = cp->read_memory(data_addr);
-            byte data2 = cp->read_memory(data_addr + 1);
+            word data_addr = (mmu->vram + (sprite_location * 16)) + curry;
+            byte data1 = mmu->read_memory(data_addr);
+            byte data2 = mmu->read_memory(data_addr + 1);
 
             for (int sprite_pixel = 0; sprite_pixel < 8; sprite_pixel++) {
                 int color_bit = sprite_pixel;
@@ -250,40 +172,40 @@ void ppu::render_sprites() {
     }
 };
 
-void ppu::set_mode(int mode) { *lcd_status = ((*lcd_status & 252) | mode); };
+void Ppu::set_mode(int mode) { *lcd_status = ((*lcd_status & 252) | mode); };
 
-byte ppu::get_mode() { return *lcd_status & 3; };
+byte Ppu::get_mode() { return *lcd_status & 3; };
 
-void ppu::set_lcd_display_enable(bool status) {
+void Ppu::set_lcd_display_enable(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 7)) | (status << 7);
 };
-void ppu::set_wnd_tile_map_select(bool status) {
+void Ppu::set_wnd_tile_map_select(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 6)) | (status << 6);
 };
-void ppu::set_wnd_display_enable(bool status) {
+void Ppu::set_wnd_display_enable(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 5)) | (status << 5);
 };
-void ppu::set_bg_wnd_tile_data_select(bool status) {
+void Ppu::set_bg_wnd_tile_data_select(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 4)) | (status << 4);
 };
-void ppu::set_bg_tile_map_select(bool status) {
+void Ppu::set_bg_tile_map_select(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 3)) | (status << 3);
 };
-void ppu::set_obj_size(bool status) {
+void Ppu::set_obj_size(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 2)) | (status << 2);
 };
-void ppu::set_obj_display_enable(bool status) {
+void Ppu::set_obj_display_enable(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 1)) | (status << 1);
 };
-void ppu::set_bg_display(bool status) {
+void Ppu::set_bg_display(bool status) {
     *lcd_control = (*lcd_control & ~(1UL << 0)) | (status << 0);
 };
 
-bool ppu::get_lcd_display_enable() { return *lcd_control & 0x80; };
-bool ppu::get_wnd_tile_map_select() { return *lcd_control & 0x40; };
-bool ppu::get_wnd_display_enable() { return *lcd_control & 0x20; };
-bool ppu::get_bg_wnd_tile_data_select() { return *lcd_control & 0x10; };
-bool ppu::get_bg_tile_map_select() { return *lcd_control & 0x08; };
-bool ppu::get_obj_size() { return *lcd_control & 0x04; };
-bool ppu::get_obj_display_enable() { return *lcd_control & 0x02; };
-bool ppu::get_bg_display() { return *lcd_control & 0x01; };
+bool Ppu::get_lcd_display_enable() { return *lcd_control & 0x80; };
+bool Ppu::get_wnd_tile_map_select() { return *lcd_control & 0x40; };
+bool Ppu::get_wnd_display_enable() { return *lcd_control & 0x20; };
+bool Ppu::get_bg_wnd_tile_data_select() { return *lcd_control & 0x10; };
+bool Ppu::get_bg_tile_map_select() { return *lcd_control & 0x08; };
+bool Ppu::get_obj_size() { return *lcd_control & 0x04; };
+bool Ppu::get_obj_display_enable() { return *lcd_control & 0x02; };
+bool Ppu::get_bg_display() { return *lcd_control & 0x01; };

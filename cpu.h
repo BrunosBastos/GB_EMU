@@ -1,5 +1,4 @@
-#ifndef _CPU_H_
-#define _CPU_H_
+#pragma once
 
 #include "mmu.h"
 
@@ -13,12 +12,12 @@
 #define L 7
 
 
-class cpu {
+class Cpu {
 
     public:
 
-        void initialize(mmu* mmu);
-        mmu *memory;                // pointer to the memory object
+        Cpu(Mmu* mmu);
+        Mmu *memory;                // pointer to the memory object
         word pc;
         word opcode;
 
@@ -57,16 +56,11 @@ class cpu {
         void write_memory(word address, byte data);
 
         void debug();
-        void request_interrupt(int id);
-        void execute_interrupts();
-        void service_interrupt(int id);
 
         void update_timers();
 
         void key_released(int key);
         void key_pressed(int key);
-        byte get_joypad_state();
-
 
         void ld_nn_n(byte reg);
         void ld_r1_r2(byte r1, byte r2);
@@ -195,5 +189,3 @@ class cpu {
         bool get_h_flag();
         bool get_c_flag();
 };
-
-#endif
