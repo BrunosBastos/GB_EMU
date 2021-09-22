@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MBC_H
+#define MBC_H
 
 #include "cartridge.h"
 #include "types.h"
@@ -39,7 +40,7 @@ class MemoryController0 : public MemoryController {
     void write(word location, byte data);
     
     public:
-        MemoryController0();
+        MemoryController0(Cartridge *cart);
 };
 
 // MBC1 (max 2Mbyte ROM and/or 32Kbyte RAM)
@@ -51,7 +52,7 @@ class MemoryController1 : public MemoryController {
     //void save_state(ofstream &file);
     //void load_state(ifstream &file);
     public:
-        MemoryController1();
+        MemoryController1(Cartridge *cart);
 };
 
 // MBC2 (max 256Kbyte ROM and 512x4 bits RAM)
@@ -60,7 +61,7 @@ class MemoryController2 : public MemoryController {
     void write(word location, byte data);
 
     public:
-        MemoryController2();
+        MemoryController2(Cartridge *cart);
 };
 
 // MBC3(max 2Mbyte ROM and / or 32Kbyte RAM and Timer)
@@ -73,5 +74,7 @@ class MemoryController3 : public MemoryController {
     //void load_state(ifstream &file);
 
     public:
-        MemoryController3();
+        MemoryController3(Cartridge *cart);
 };
+
+#endif

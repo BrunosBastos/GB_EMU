@@ -1,31 +1,31 @@
 #include "mmu.h"
 #include <cstring>
 
+
 Mmu::Mmu(Cartridge *c) { 
 
     joypad_state = 0xFF;
 
 	// Assign memory controller based on cartridge specification
-	switch (address[0x0147])
-	{
+	switch (address[0x0147]) {
 		case 0x01:
 		case 0x02:
 		case 0x03:
-			mbc = new MemoryController1();
+			mbc = new MemoryController1(c);
 			break;
 		case 0x05:
 		case 0x06:
-			mbc = new MemoryController2();
+			mbc = new MemoryController2(c);
 			break;
 		case 0x0F:
 		case 0x10:
 		case 0x11:
 		case 0x12:
 		case 0x13:
-			mbc = new MemoryController3();
+			mbc = new MemoryController3(c);
 			break;
 		default:
-			mbc = new MemoryController0();
+			mbc = new MemoryController0(c);
 			break;
 	}
 
@@ -65,25 +65,25 @@ Mmu::Mmu(Cartridge *c) {
     address[0xFFFF] = 0x00;  // IE
 
 
-    P1   = MemoryRegister(&address[0xFF00]);
-	DIV  = MemoryRegister(&address[0xFF04]);
-	TIMA = MemoryRegister(&address[0xFF05]);
-	TMA  = MemoryRegister(&address[0xFF06]);
-	TAC  = MemoryRegister(&address[0xFF07]);
-	LCDC = MemoryRegister(&address[0xFF40]);
-	STAT = MemoryRegister(&address[0xFF41]);
-	SCY  = MemoryRegister(&address[0xFF42]);
-	SCX  = MemoryRegister(&address[0xFF43]);
-	LY   = MemoryRegister(&address[0xFF44]);
-	LYC  = MemoryRegister(&address[0xFF45]);
-	DMA  = MemoryRegister(&address[0xFF46]);
-	BGP  = MemoryRegister(&address[0xFF47]);
-	OBP0 = MemoryRegister(&address[0xFF48]);
-	OBP1 = MemoryRegister(&address[0xFF49]);
-	WY   = MemoryRegister(&address[0xFF4A]);
-	WX   = MemoryRegister(&address[0xFF4B]);
-	IF   = MemoryRegister(&address[0xFF0F]);
-	IE   = MemoryRegister(&address[0xFFFF]);
+    P1   = MemoryRegister(&address[0xFF00], 0xFF00);
+	DIV  = MemoryRegister(&address[0xFF04], 0xFF04);
+	TIMA = MemoryRegister(&address[0xFF05], 0xFF05);
+	TMA  = MemoryRegister(&address[0xFF06], 0xFF06);
+	TAC  = MemoryRegister(&address[0xFF07], 0xFF07);
+	LCDC = MemoryRegister(&address[0xFF40], 0xFF40);
+	STAT = MemoryRegister(&address[0xFF41], 0xFF41);
+	SCY  = MemoryRegister(&address[0xFF42], 0xFF42);
+	SCX  = MemoryRegister(&address[0xFF43], 0xFF43);
+	LY   = MemoryRegister(&address[0xFF44], 0xFF44);
+	LYC  = MemoryRegister(&address[0xFF45], 0xFF45);
+	DMA  = MemoryRegister(&address[0xFF46], 0xFF46);
+	BGP  = MemoryRegister(&address[0xFF47], 0xFF47);
+	OBP0 = MemoryRegister(&address[0xFF48], 0xFF48);
+	OBP1 = MemoryRegister(&address[0xFF49], 0xFF49);
+	WY   = MemoryRegister(&address[0xFF4A], 0xFF4A);
+	WX   = MemoryRegister(&address[0xFF4B], 0xFF4B);
+	IF   = MemoryRegister(&address[0xFF0F], 0xFF0F);
+	IE   = MemoryRegister(&address[0xFFFF], 0xFFFF);
     
 };
 

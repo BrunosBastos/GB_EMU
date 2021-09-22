@@ -1,5 +1,10 @@
-#include <vector>
+#ifndef TYPES_H
+#define TYPES_H
+
+#include <assert.h>
 #include <stdio.h>
+#include <string.h>
+#include <vector>
 
 typedef unsigned char byte;
 typedef unsigned short word;
@@ -31,8 +36,10 @@ class PairRegister {
 		void set(byte hi, byte lo);
 		word get();
 
-		PairRegister operator ++ ();
-		PairRegister operator -- ();
+		byte operator ++ ();
+		byte operator -- ();
+		byte operator ++ (int);
+		byte operator -- (int);
 };
 
 
@@ -40,13 +47,23 @@ class MemoryRegister {
 
 	private:
 		byte *data;
+		word addr;
 
 	public:
-		MemoryRegister(byte *addr);
+		MemoryRegister();
+		MemoryRegister(byte *p, word addr);
 		byte get();
 		void set(byte value);
 		void set_bit(byte bit, bool value);
 		bool get_bit(byte bit);
+		word address();
+
+		byte operator ++ ();
+		byte operator -- ();
+		byte operator ++ (int);
+		byte operator -- (int);
+		void operator &= (byte value);
+		void operator |= (byte value);
 };
 
 /*
@@ -57,3 +74,5 @@ bool get_bit(byte* target, byte bit) {
 	return *target & (1 << bit);
 }
 */
+
+#endif

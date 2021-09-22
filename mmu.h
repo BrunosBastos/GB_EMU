@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MMU_H
+#define MMU_H
 
 #include "types.h"
 #include "cartridge.h"
@@ -11,7 +12,7 @@ class Mmu {
         byte *address;
         byte joypad_state;
         MemoryController *mbc; 
-
+        
         Mmu(Cartridge *c);
         byte read_memory(word addr);
         void write_memory(word addr, byte value);
@@ -92,3 +93,4 @@ class Mmu {
 
 */
 
+#endif

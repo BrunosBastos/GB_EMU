@@ -1,5 +1,3 @@
-#pragma once
-
 #include "types.h"
 
 
@@ -54,20 +52,36 @@ void PairRegister::set(byte hi, byte lo) {
     *(this->lo) = lo;
 };
 
-PairRegister PairRegister::operator++() {
+byte PairRegister::operator++() {
     set(get() + 1);
+    return get();
 };
 
-PairRegister PairRegister::operator--() {
+byte PairRegister::operator--() {
     set(get() - 1);
+    return get();
+};
+
+byte PairRegister::operator++(int) {
+    set(get() + 1);
+    return get() - 1;
+};
+
+byte PairRegister::operator--(int) {
+    set(get() - 1);
+    return get() - 1;
 };
 
 
 
 /* MemoryRegister */
+MemoryRegister::MemoryRegister() {
+    
+}
 
-MemoryRegister::MemoryRegister(byte *addr) {
-    data = addr;
+MemoryRegister::MemoryRegister(byte *p, word addr) {
+    data = p;
+    this->addr = addr;
 };
 
 byte MemoryRegister::get() {
@@ -85,3 +99,36 @@ void MemoryRegister::set_bit(byte bit, bool value) {
 bool MemoryRegister::get_bit(byte bit) {
     return *data & (1 << bit);
 };
+
+word MemoryRegister::address() {
+    return addr;
+}
+
+byte MemoryRegister::operator++() {
+    set(get() + 1);
+    return get();
+};
+
+byte MemoryRegister::operator--() {
+    set(get() - 1);
+    return get();
+};
+
+byte MemoryRegister::operator++(int) {
+    set(get() + 1);
+    return get() - 1;
+};
+
+byte MemoryRegister::operator--(int) {
+    set(get() - 1);
+    return get() - 1;
+};
+
+void MemoryRegister::operator&=(byte value) {
+    set(get() & value);
+}
+
+void MemoryRegister::operator|=(byte value) {
+    set(get() | value);
+}
+

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPU_H
+#define CPU_H
 
 #include "mmu.h"
 
@@ -17,7 +18,7 @@ class Cpu {
     public:
 
         Cpu(Mmu* mmu);
-        Mmu *memory;                // pointer to the memory object
+        Mmu *mmu;                // pointer to the memory object
         word pc;
         word opcode;
 
@@ -40,18 +41,8 @@ class Cpu {
         void emulate_cycle();
         void execute_opcode();
 
-        void cpu_init_table();
-        void cpu_init_table_cb();
-
-        byte read_memory(word addr);
-        void write_memory(word address, byte data);
-
         void debug();
 
-        void update_timers();
-
-        void key_released(int key);
-        void key_pressed(int key);
 
         void ld_nn_n(byte reg);
         void ld_r1_r2(byte r1, byte r2);
@@ -180,3 +171,5 @@ class Cpu {
         bool get_h_flag();
         bool get_c_flag();
 };
+
+#endif

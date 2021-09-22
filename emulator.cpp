@@ -7,17 +7,24 @@ Emulator::Emulator(char *filename) {
     Mmu *mmu = new Mmu(c);
     Cpu *cpu = new Cpu(mmu);
     Ppu *ppu = new Ppu(mmu);
-
 }
 
+void Emulator::run() {
+
+    cpu->emulate_cycle();
+    update_graphics();
+    execute_interrupts();
+
+};
+
 void Emulator::request_interrupt(int id) {
-    mmu->write_memory(0xFF0F, mmu->read_memory(0xFF0F) | (1 << id));
+    mmu->write_memory(mmu->IF.address(), mmu->read_memory(mmu->IF.address()) | (1 << id));
 };
 
 void Emulator::execute_interrupts() {
-    if (interrupt_master) {
-        byte req = mmu->read_memory(0xFF0F);
-        byte enabled = mmu->read_memory(0xFFFF);
+    if (cpu->interrupt_master) {
+        byte req = mmu->read_memory(mmu->IF.address());
+        byte enabled = mmu->read_memory(mmu->IE.address());
 
         if (req & 0xFF) {
             // check if any of the bits is 1
@@ -36,7 +43,7 @@ void Emulator::execute_interrupts() {
 void Emulator::service_interrupt(int id) {
     // master interrupt and the bit of the current interrupt are reset
     interrupt_master = false;
-    mmu->write_memory(0xFF0F, mmu->read_memory(0xFF0F) & ~(1 << id));
+    mmu->write_memory(mmu->IF.address(), mmu->read_memory(mmu->IF.address()) & ~(1 << id));
 
     cpu->store_pc_stack();
 
@@ -101,7 +108,7 @@ void Emulator::update_graphics() {
     clock_count -= cpu->last_clock;
 
     if (clock_count <= 0) {
-        byte curr_line = ++(*line);
+        byte curr_line = ++mmu->LY;
         printf("curr_line : %d\n", curr_line);
 
         clock_count = 456;
@@ -110,7 +117,7 @@ void Emulator::update_graphics() {
             request_interrupt(INTERRUPT_VBLANK);
         } else if (curr_line > 153) {
             // V-BLANK area
-            *line = 0;
+            mmu->LY.set(0);
         } else if (curr_line < 144) {
             ppu->render_line();
         }
@@ -121,12 +128,12 @@ void Emulator::set_lcd_status() {
     if (!ppu->get_lcd_display_enable()) {
         // set the mode to 1 during lcd disabled and reset scanline
         clock_count = 456;
-        *line = 0;
-        *lcd_status &= 252;
+        mmu->LY.set(0);
+        mmu->STAT &= 252;
         ppu->set_mode(1);
         return;
     }
-    byte curr_line = *line;
+    byte curr_line = mmu->LY.get();
     byte last_mode = ppu->get_mode();
 
     bool req_interrupt = false;
@@ -134,21 +141,21 @@ void Emulator::set_lcd_status() {
     if (curr_line >= 144) {
         // V-BLANK area
         ppu->set_mode(1);
-        req_interrupt = *lcd_status & 0x10;
+        req_interrupt = mmu->STAT.get() & 0x10;
     } else {
         int mode2bounds = 456 - 80;
         int mode3bounds = mode2bounds - 172;
 
         if (clock_count >= mode2bounds) {
             ppu->set_mode(2);
-            req_interrupt = *lcd_status & 0x20;
+            req_interrupt = mmu->STAT.get() & 0x20;
         }
         else if (clock_count >= mode3bounds) {
             ppu->set_mode(3);
         }
         else {
             ppu->set_mode(0);
-            req_interrupt = *lcd_status & 0x08;
+            req_interrupt = mmu->STAT.get() & 0x08;
         }
     }
 
@@ -158,13 +165,13 @@ void Emulator::set_lcd_status() {
     }
     
     if (curr_line == mmu->read_memory(0xFF45)) {
-        *lcd_status |= 0x04;
-        if (*lcd_status & 0x40) {
+        mmu->STAT |= 0x04;
+        if (mmu->STAT.get() & 0x40) {
             // bit 6
             request_interrupt(INTERRUPT_LCDC);
         }
     } else {
-        *lcd_status &= ~0x04;
+        mmu->STAT &= ~0x04;
     }
 };
 

@@ -1,8 +1,9 @@
-#pragma once
+#ifndef EMULATOR_H
+#define EMULATOR_H
 
 #include "types.h"
 #include "cpu.h"
-#include "memory.h"
+#include "mmu.h"
 #include "ppu.h"
 
 
@@ -16,8 +17,11 @@ class Emulator {
 		Ppu *ppu;
 
 
+		void key_pressed(int key);
+		void key_released(int key);
+	
     private:
-    
+
 		// float framerate = 60;
 		int clock_count = 456;
 
@@ -25,10 +29,8 @@ class Emulator {
 		// void handle_events();
 
 		// -------- JOYPAD ------- //
-		int joypad_state;
-		void key_pressed(int key);
-		void key_released(int key);
 		// int get_key_id(Key key);
+		int joypad_state;
 
 		// -------- SAVESTATES ------- //
 		// void save_state(int id);
@@ -61,3 +63,5 @@ class Emulator {
 		void set_lcd_status();
 		void update_graphics();
 };
+
+#endif

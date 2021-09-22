@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CARTRIDGE_H
+#define CARTRIDGE_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,3 +18,5 @@ class Cartridge {
         void cartridge_free();
         void print(int s, int e);
 };
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OPCODES_H
+#define OPCODES_H
 
 #include "types.h"
 #include "cpu.h"
@@ -487,3 +488,5 @@ void op_CB_BC(Mmu* memory, Cpu* cp);
 void op_CB_BD(Mmu* memory, Cpu* cp);
 void op_CB_BE(Mmu* memory, Cpu* cp);
 void op_CB_BF(Mmu* memory, Cpu* cp);
+
+#endif

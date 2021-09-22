@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PPU_H
+#define PPU_H
 
 #include "types.h"
 #include "mmu.h"
@@ -81,3 +82,5 @@ class Ppu {
         // OBJ Display Enable(0=OFF, 1=ON)
         // Bg Display(0=OFF, 1=ON)
 };
+
+#endif

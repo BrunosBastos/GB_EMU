@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "opcodes.h"
 #include "ppu.h"
+#include "emulator.h"
 
 SDL_Renderer *renderer;
 
@@ -30,7 +31,7 @@ void change_color(int color) {
     }
 };
 
-void update_screen(ppu *p) {
+void update_screen(Ppu *p) {
     for (int x = 0; x < PPU_BUFFER_WIDTH; x++) {
         for (int y = 0; y < PPU_BUFFER_HEIGHT; y++) {
             change_color(p->buffer[x][y]);
@@ -39,7 +40,7 @@ void update_screen(ppu *p) {
     }
 };
 
-void handle_input(cpu* cp, SDL_Event event) {
+void handle_input(Emulator* emu, SDL_Event event) {
     if (event.type == SDL_KEYDOWN) {
         printf("Input \n");
         int key = -1;
@@ -70,7 +71,7 @@ void handle_input(cpu* cp, SDL_Event event) {
                 break;
         }
         if (key != -1) {
-            cp->key_pressed(key);
+            emu->key_pressed(key);
         }
     }
     // If a key was released
@@ -103,7 +104,7 @@ void handle_input(cpu* cp, SDL_Event event) {
                 break;
         }
         if (key != -1) {
-            cp->key_released(key);
+            emu->key_released(key);
         }
     }
 };
@@ -114,27 +115,17 @@ int main() {
 
     initialize_optable();
 
-    cartridge *c = new cartridge();
-    c->cartridge_load("./roms/tetris.gb");
-    mmu *m = new mmu();
-    m->load_rom(c);
-
-    cpu *cp = new cpu();
-    cp->initialize(m);
-    ppu *p = new ppu();
-    p->initialize(m, cp);
-
+    Emulator *emu = new Emulator("./roms/tetris.gb");
+   
     bool running = true;
     while (running) {
 
         int startMs = SDL_GetTicks();
-        cp->emulate_cycle();
-        p->update_graphics();
-        update_screen(p);
-        cp->execute_interrupts();
+        emu->run();
+        update_screen(emu->ppu);
 
         while (SDL_PollEvent(&event)) { 
-            handle_input(cp, event);
+            handle_input(emu, event);
             if (event.type == SDL_QUIT) {
                 running = false;
                 break;
