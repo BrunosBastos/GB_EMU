@@ -1,18 +1,39 @@
-#ifndef _MMU_H_
-#define _MMU_H_
+#ifndef MMU_H
+#define MMU_H
 
 #include "types.h"
 #include "cartridge.h"
+#include "mbc.h"
 
-
-class mmu {
+class Mmu {
 
     public:
 
-        void initialize();
-        void load_rom(cartridge *c);
-        byte read_memory(int addr);
-        void write_memory(int addr, byte value);
+        byte *address;
+        byte joypad_state;
+        MemoryController *mbc; 
+        
+        Mmu(Cartridge *c);
+        byte read_memory(word addr);
+        void write_memory(word addr, byte value);
+        byte get_joypad_state();
+
+        MemoryRegister
+			P1,
+			DIV, TIMA, TMA, TAC,
+			LCDC, STAT, SCY, SCX, LYC, LY, DMA,
+			BGP, OBP0, OBP1, WY, WX,
+			IF, IE;
+
+        unsigned short rom[2] = {0x0000, 0x4000};   // ROM banks, there are 2 of size 16kB
+        unsigned short vram = 0x8000;               // video RAM $8000-9FFF
+        unsigned short eram = 0xA000;               // External (Cartridge) RAM 8kB $A000-BFFF
+        unsigned short wram = 0xC000;               // Work RAM 8kB $C000-DFFF
+        unsigned short oam = 0xFE00;                // Object Attribute memory, 160 bytes
+        unsigned short iop = 0xFF00;                // I/O ports $FF00-FF4C, 76 bytes, there is some extra space but is unusable
+        unsigned short ppu = 0xFF40;                // usefull for the graphics
+        unsigned short hram = 0xFF80;               // high RAM (zero page) $FF80-FFFE, 127 bytes, quick access RAM            
+        unsigned short ief = 0xFFFF;                // interrupt enable flag $FFFF, I/O register that controls the interrupts
 
         byte bios[0x100] = {
             0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
@@ -32,24 +53,6 @@ class mmu {
             0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
             0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50 
         };
-
-        byte address[0x10000];
-        cartridge* cart;
-		std::vector<byte*> ram_banks;
-        
-        byte current_rom_bank;
-
-
-        unsigned short rom[2] = {0x0000, 0x4000};   // ROM banks, there are 2 of size 16kB
-        unsigned short vram = 0x8000;               // video RAM $8000-9FFF
-        unsigned short eram = 0xA000;               // External (Cartridge) RAM 8kB $A000-BFFF
-        unsigned short wram = 0xC000;               // Work RAM 8kB $C000-DFFF
-        unsigned short oam = 0xFE00;                // Object Attribute memory, 160 bytes
-        unsigned short iop = 0xFF00;                // I/O ports $FF00-FF4C, 76 bytes, there is some extra space but is unusable
-        unsigned short ppu = 0xFF40;                // usefull for the graphics
-        unsigned short hram = 0xFF80;               // high RAM (zero page) $FF80-FFFE, 127 bytes, quick access RAM            
-        unsigned short ief = 0xFFFF;                // interrupt enable flag $FFFF, I/O register that controls the interrupts
-
         /*
         byte rom[2][0x4000];        // ROM banks, there are 2 of size 16kB
         byte vram[0x2000];          // video RAM $8000-9FFF

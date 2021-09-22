@@ -1,7 +1,7 @@
 #include "cartridge.h"
 #include <string.h>
 
-void cartridge::cartridge_load(const char* filename) {
+Cartridge::Cartridge(char* filename) {
     FILE *file = NULL;
     file = fopen(filename, "rb");
     
@@ -22,13 +22,13 @@ void cartridge::cartridge_load(const char* filename) {
     } 
 };
 
-void cartridge::cartridge_free() {
+void Cartridge::cartridge_free() {
     free(title);
     free(rom);
     free(this);
 };
 
-void cartridge::print(int s, int e) {
+void Cartridge::print(int s, int e) {
 
     for(int i=0; i < e-s; i++) {
         printf("%02x ", rom[s + i]);

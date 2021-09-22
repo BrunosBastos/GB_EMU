@@ -1,5 +1,5 @@
-#ifndef _CPU_H_
-#define _CPU_H_
+#ifndef CPU_H
+#define CPU_H
 
 #include "mmu.h"
 
@@ -13,12 +13,12 @@
 #define L 7
 
 
-class cpu {
+class Cpu {
 
     public:
 
-        void initialize(mmu* mmu);
-        mmu *memory;                // pointer to the memory object
+        Cpu(Mmu* mmu);
+        Mmu *mmu;                // pointer to the memory object
         word pc;
         word opcode;
 
@@ -28,19 +28,10 @@ class cpu {
         int divider_counter;
         int current_clock_speed;
         
-        byte joypad_state;
 
         byte registers[8];          // A-F B-C D-E H-L
 
         word sp;
-
-        byte current_rom_bank;
-        byte current_ram_bank;
-        bool mbc1;
-        bool mbc2;
-        bool mbc3;
-        bool enable_ram_bank;
-        bool using16_8_model;
 
 
         bool interrupt_master;
@@ -50,22 +41,7 @@ class cpu {
         void emulate_cycle();
         void execute_opcode();
 
-        void cpu_init_table();
-        void cpu_init_table_cb();
-
-        byte read_memory(word addr);
-        void write_memory(word address, byte data);
-
         void debug();
-        void request_interrupt(int id);
-        void execute_interrupts();
-        void service_interrupt(int id);
-
-        void update_timers();
-
-        void key_released(int key);
-        void key_pressed(int key);
-        byte get_joypad_state();
 
 
         void ld_nn_n(byte reg);
