@@ -62,7 +62,7 @@ void Cpu::debug() {
 //////////////////////////////////////////////////////////////////////////////////////////
 
 void Cpu::subc_a_pc() {
-    // TODO:: this is not used??
+    // TODO: this is not used??
     registers[A] = sub8(registers[A], mmu->address[pc] + get_c_flag());
 };
 

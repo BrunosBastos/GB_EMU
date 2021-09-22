@@ -4,13 +4,12 @@
 Emulator::Emulator(char *filename) {
 
     Cartridge *c = new Cartridge(filename);
-    Mmu *mmu = new Mmu(c);
-    Cpu *cpu = new Cpu(mmu);
-    Ppu *ppu = new Ppu(mmu);
+    mmu = new Mmu(c);
+    cpu = new Cpu(mmu);
+    ppu = new Ppu(mmu);
 }
 
 void Emulator::run() {
-
     cpu->emulate_cycle();
     update_graphics();
     execute_interrupts();

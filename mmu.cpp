@@ -6,6 +6,7 @@ Mmu::Mmu(Cartridge *c) {
 
     joypad_state = 0xFF;
 
+    address = c->rom;
 	// Assign memory controller based on cartridge specification
 	switch (address[0x0147]) {
 		case 0x01:
@@ -28,8 +29,6 @@ Mmu::Mmu(Cartridge *c) {
 			mbc = new MemoryController0(c);
 			break;
 	}
-
-    address = c->rom;
 
     address[0xFF05] = 0x00;  // TIMA
     address[0xFF06] = 0x00;  // TMA
@@ -84,13 +83,14 @@ Mmu::Mmu(Cartridge *c) {
 	WX   = MemoryRegister(&address[0xFF4B], 0xFF4B);
 	IF   = MemoryRegister(&address[0xFF0F], 0xFF0F);
 	IE   = MemoryRegister(&address[0xFFFF], 0xFFFF);
-    
+
 };
 
 byte Mmu::read_memory(word addr) {
     // reading from rom bank
     if (addr >= 0x4000 && addr <= 0x7FFF) {
-       return mbc->read(addr);
+        //return mbc->read(addr);
+        return address[addr];
     }
 
     // reading from RAM Bank

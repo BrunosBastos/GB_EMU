@@ -35,7 +35,6 @@ class MemoryController {
 // This class represents games that only use the exact 32kB of cartridge space
 class MemoryController0 : public MemoryController {
 
-
     byte read(word location);
     void write(word location, byte data);
     
