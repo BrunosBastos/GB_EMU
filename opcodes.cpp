@@ -1281,9 +1281,7 @@ void op_CB_04(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_H); };
 
 void op_CB_05(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_L); };
 
-void op_CB_06(Mmu* mmu, Cpu* cp) {
-
-};
+void op_CB_06(Mmu* mmu, Cpu* cp) { cp->rlc16(&cp->reg_HL); };
 
 void op_CB_07(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_A); };
 
@@ -1299,9 +1297,7 @@ void op_CB_0C(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_H); };
 
 void op_CB_0D(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_L); };
 
-void op_CB_0E(Mmu* mmu, Cpu* cp) {
-
-};
+void op_CB_0E(Mmu* mmu, Cpu* cp) { cp->rrc16(&cp->reg_HL); };
 
 void op_CB_0F(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_A); };
 
@@ -1317,9 +1313,7 @@ void op_CB_14(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_H); };
 
 void op_CB_15(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_L); };
 
-void op_CB_16(Mmu* mmu, Cpu* cp) {
-
-};
+void op_CB_16(Mmu* mmu, Cpu* cp) { cp->rl16(&cp->reg_HL); };
 
 void op_CB_17(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_A); };
 
@@ -1335,9 +1329,7 @@ void op_CB_1C(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_H); };
 
 void op_CB_1D(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_L); };
 
-void op_CB_1E(Mmu* mmu, Cpu* cp) {
-
-};
+void op_CB_1E(Mmu* mmu, Cpu* cp) { cp->rr16(&cp->reg_HL); };
 
 void op_CB_1F(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_A); };
 
@@ -1353,9 +1345,7 @@ void op_CB_24(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_H); };
 
 void op_CB_25(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_L); };
 
-void op_CB_26(Mmu* mmu, Cpu* cp) {
-
-};
+void op_CB_26(Mmu* mmu, Cpu* cp) { cp->sla16(&cp->reg_HL); };
 
 void op_CB_27(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_A); };
 
@@ -1371,9 +1361,7 @@ void op_CB_2C(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_H); };
 
 void op_CB_2D(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_L); };
 
-void op_CB_2E(Mmu* mmu, Cpu* cp) {
-
-};
+void op_CB_2E(Mmu* mmu, Cpu* cp) { cp->sra16(&cp->reg_HL); };
 
 void op_CB_2F(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_A); };
 
@@ -1405,8 +1393,6 @@ void op_CB_3C(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_H); };
 
 void op_CB_3D(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_L); };
 
-void op_CB_3E(Mmu* mmu, Cpu* cp) {
-
-};
+void op_CB_3E(Mmu* mmu, Cpu* cp) { cp->srl16(&cp->reg_HL); };
 
 void op_CB_3F(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_A); };

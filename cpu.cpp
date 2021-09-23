@@ -298,6 +298,112 @@ void Cpu::add16(PairRegister *op1, word op2) {
     op1->set(op1->get() + op2);
 };
 
+
+void Cpu::rl16(PairRegister *reg_16) {
+    byte carry = get_c_flag();
+    byte value = mmu->read_memory(reg_16->get());
+
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(value & (1 << 7));
+
+    value = (value << 1) | carry;
+
+    set_z_flag(value == 0);
+
+    mmu->write_memory(reg_16->get(), value);
+};
+
+void Cpu::rlc16(PairRegister *reg_16) {
+    // rotates reg_8 to the left with bit 7 being moved to bit 0 and
+    // also stored in the carry
+    byte value = mmu->read_memory(reg_16->get());
+
+    byte carry = (value & (1 << 7)) >> 7;
+    value = (value << 1) | carry;
+
+    set_z_flag(value == 0);
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(carry);
+
+    mmu->write_memory(reg_16->get(), value);
+};
+
+void Cpu::rrc16(PairRegister *reg_16) {
+    byte value = mmu->read_memory(reg_16->get());
+
+    set_h_flag(0);
+    set_n_flag(0);
+    set_c_flag(value & 0x01);
+
+    byte carry = get_c_flag();
+    value = (value >> 1) | (carry << 7);
+
+    set_z_flag(value == 0);
+    
+    mmu->write_memory(reg_16->get(), value);
+};
+
+void Cpu::rr16(PairRegister *reg_16) {
+    byte value = mmu->read_memory(reg_16->get());
+
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(value & 0x01);
+
+    byte carry = get_c_flag();
+    value = (value >> 1) | (carry << 7);
+
+    set_z_flag(value == 0);
+
+    mmu->write_memory(reg_16->get(), value);
+};
+
+void Cpu::sla16(PairRegister *reg_16) {
+    byte value = mmu->read_memory(reg_16->get());
+
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag((value & 0x80) >> 7);
+
+    value <<= 1;
+
+    set_z_flag(value == 0);
+    
+    mmu->write_memory(reg_16->get(), value);
+};
+
+void Cpu::sra16(PairRegister *reg_16) {
+    byte value = mmu->read_memory(reg_16->get());
+    
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(value & 0x01);
+
+    byte last_bit = value & 0x80;
+    value >>= 1;
+    value |= last_bit;
+    
+    set_z_flag(value == 0);
+
+    mmu->write_memory(reg_16->get(), value);
+};
+
+void Cpu::srl16(PairRegister *reg_16) {
+    byte value = mmu->read_memory(reg_16->get());
+    
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(value & 0x01);
+
+    value >>= 1;
+
+    set_z_flag(value == 0);
+
+    mmu->write_memory(reg_16->get(), value);
+};
+
 void Cpu::ret() {
     pc = (mmu->read_memory(sp++) | (mmu->read_memory(sp++) << 8)) - 1;
 };

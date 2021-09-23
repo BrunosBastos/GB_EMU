@@ -54,13 +54,20 @@ class Cpu {
         void sla8(byte *r8);
         void sra8(byte *r8);
         void srl8(byte *r8);
+        void rl16(PairRegister *r16);
+        void rr16(PairRegister *r16);
+        void rlc16(PairRegister *r16);
+        void rrc16(PairRegister *r16);
+        void sra16(PairRegister *r16);
+        void sla16(PairRegister *r16);
+        void srl16(PairRegister *r16);
         
-        void bit(byte *reg_8, byte bit);
-        void bit(PairRegister *reg_16, byte bit);
-        void set(byte *reg_8, byte bit);
-        void set(PairRegister *reg_16, byte bit);
-        void res(byte *reg_8, byte bit);
-        void res(PairRegister *reg_16, byte bit);
+        void bit(byte *r8, byte bit);
+        void bit(PairRegister *r16, byte bit);
+        void set(byte *r8, byte bit);
+        void set(PairRegister *r16, byte bit);
+        void res(byte *r8, byte bit);
+        void res(PairRegister *r16, byte bit);
         
         void ret();
         void store_pc_stack();
@@ -79,8 +86,8 @@ class Cpu {
         void inc16(PairRegister *op1);
         void dec16(PairRegister *op1);
 
-        void push16(PairRegister *reg_16);
-        void pop16(PairRegister *reg_16); 
+        void push16(PairRegister *r16);
+        void pop16(PairRegister *r16); 
 
 
         void set_z_flag(bool value);
