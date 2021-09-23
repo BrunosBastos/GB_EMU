@@ -5,23 +5,23 @@
 // http://www.codeslinger.co.uk/pages/projects/gameboy/interupts.html
 
 
-Ppu::Ppu(Mmu* memory) {
+Ppu::Ppu(Mmu* mmu) {
 
-    this->mmu = memory;
+    this->mmu = mmu;
     clock_count = 456;
 
-    lcd_control = &memory->address[memory->ppu];
-    lcd_status = &memory->address[memory->ppu + 0x01];
-    scroll_y = &memory->address[memory->ppu + 0x02];
-    scroll_x = &memory->address[memory->ppu + 0x03];
-    line = &memory->address[memory->ppu + 0x04];
+    lcd_control = &mmu->address[mmu->ppu];
+    lcd_status  = &mmu->address[mmu->ppu + 0x01];
+    scroll_y    = &mmu->address[mmu->ppu + 0x02];
+    scroll_x    = &mmu->address[mmu->ppu + 0x03];
+    line        = &mmu->address[mmu->ppu + 0x04];
 
-    windpos_y = &memory->address[memory->ppu + 0x0A];
-    windpos_x = &memory->address[memory->ppu + 0x0B];
+    windpos_y = &mmu->address[mmu->ppu + 0x0A];
+    windpos_x = &mmu->address[mmu->ppu + 0x0B];
 
-    pallets[0] = &memory->address[0xFF47];
-    pallets[1] = &memory->address[0xFF48];
-    pallets[2] = &memory->address[0xFF49];
+    pallets[0] = &mmu->address[0xFF47];
+    pallets[1] = &mmu->address[0xFF48];
+    pallets[2] = &mmu->address[0xFF49];
 };
 
 void Ppu::render_line() {
@@ -104,7 +104,7 @@ void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
 
 void Ppu::render_tiles() {
 
-    byte curr_line = *line;
+    byte curr_line = mmu->LY.get();
 
     if(curr_line > 143) {
         return;
@@ -120,7 +120,7 @@ void Ppu::render_tiles() {
 
 void Ppu::render_sprites() {
 
-    byte curr_line = *line;
+    byte curr_line = mmu->LY.get();
 
     if(curr_line > 143) {
         return;
