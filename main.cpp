@@ -113,27 +113,37 @@ int main() {
     sdl_init();
     SDL_Event event;
 
+
     initialize_optable();
 
     Emulator *emu = new Emulator("./roms/tetris.gb");
    
     bool running = true;
     while (running) {
+        int framerate = 60;
+        float cycles_per_frame = emu->clock_speed / framerate;
+		float time_between_frames = 1000 / framerate;
+        int current_cycle = 0;
 
         int startMs = SDL_GetTicks();
-        emu->run();
-        update_screen(emu->ppu);
+        //update_screen(emu->ppu);
 
-        while (SDL_PollEvent(&event)) { 
-            handle_input(emu, event);
-            if (event.type == SDL_QUIT) {
-                running = false;
-                break;
-            }
+        // while (SDL_PollEvent(&event)) { 
+        //     handle_input(emu, event);
+        //     if (event.type == SDL_QUIT) {
+        //         running = false;
+        //         break;
+        //     }
+        // }
+
+        while(current_cycle < cycles_per_frame) {
+            emu->run();        
         }
 
+        current_cycle = 0;
+
         int endMs = SDL_GetTicks();
-        SDL_Delay(16 - (endMs - startMs));
+        SDL_Delay(time_between_frames - (endMs - startMs));
         printf("fps=%d\n", (int)(1000/(SDL_GetTicks()-startMs)));
     }
     return 0;

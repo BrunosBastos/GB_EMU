@@ -7,7 +7,7 @@ Emulator::Emulator(char *filename) {
     mmu = new Mmu(c);
     cpu = new Cpu(mmu);
     ppu = new Ppu(mmu);
-}
+};
 
 void Emulator::run() {
     cpu->emulate_cycle();
@@ -184,16 +184,16 @@ void Emulator::update_timers() {
 
     if (divider_counter >= 256) {
         divider_counter = 0;
-        mmu->address[0xFF04]++;
+        mmu->DIV++;
     }
 
     // check if clock enabled
-    if (mmu->read_memory(0xFF07) & (1 << 2)) {
+    if (mmu->TAC.get() & (1 << 2)) {
         time_counter -= cpu->last_clock;
 
         // enough Cpu clock cycles have happened to update the timer
         if (time_counter <= 0) {
-            switch (mmu->read_memory(0xFF07) & 0x3) {
+            switch (mmu->TAC.get() & 0x3) {
                 case 0:
                     time_counter = 1024;
                     break;  // freq 4096
@@ -208,11 +208,11 @@ void Emulator::update_timers() {
                     break;  // freq 16382
             }
 
-            mmu->address[0xFF05]++;
+            mmu->TIMA++;
 
             // overflow
-            if (mmu->address[0xFF05] == 0) {
-                mmu->address[0xFF05] = mmu->read_memory(0xFF06);
+            if (mmu->TIMA.get() == 0) {
+                mmu->TIMA.set(mmu->TMA.get());
                 request_interrupt(INTERRUPT_TIMER);
             }
         }

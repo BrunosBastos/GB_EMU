@@ -16,6 +16,7 @@ class Emulator {
 		Mmu *mmu;
 		Ppu *ppu;
 
+		int clock_speed = 4194304;
 
 		void key_pressed(int key);
 		void key_released(int key);

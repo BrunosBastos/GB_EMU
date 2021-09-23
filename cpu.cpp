@@ -44,7 +44,7 @@ void Cpu::emulate_cycle() {
 };
 
 void Cpu::execute_opcode() {
-    debug();
+    // debug();
 
     (*optable[opcode])(mmu, this);
 };
