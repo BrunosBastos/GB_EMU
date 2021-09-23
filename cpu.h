@@ -3,14 +3,7 @@
 
 #include "mmu.h"
 
-#define A 0
-#define F 1
-#define B 2
-#define C 3
-#define D 4
-#define E 5
-#define H 6
-#define L 7
+
 
 
 class Cpu {
@@ -28,8 +21,16 @@ class Cpu {
         int divider_counter;
         int current_clock_speed;
         
+        byte reg_A, reg_F, 
+            reg_B, reg_C, 
+            reg_D, reg_E, 
+            reg_H, reg_L;
 
-        byte registers[8];          // A-F B-C D-E H-L
+        PairRegister reg_AF = PairRegister(&reg_A, &reg_F);
+        PairRegister reg_BC = PairRegister(&reg_B, &reg_C);
+        PairRegister reg_DE = PairRegister(&reg_D, &reg_E);
+        PairRegister reg_HL = PairRegister(&reg_H, &reg_L);
+
 
         word sp;
 
@@ -43,122 +44,43 @@ class Cpu {
 
         void debug();
 
-
-        void ld_nn_n(byte reg);
-        void ld_r1_r2(byte r1, byte r2);
-        //void ld_hl_r2(byte r2);
-        //void ld_r1_hl(byte r1);
-        void ld_hl_n();
-        void ld_a_nn();
-        void ld_a_pc();
-        void ld_r1_r16(byte r1, byte r16);         // loads 16 bit register into 8bit 
-        void ld_nn_a();
-        void ld_r16_r2(byte r16, byte r2);
-
+        void swap8(byte *r8);
+        void swap16(PairRegister *r16);
         
-        void ld_a_C();
-        void ld_C_a();
-        void ldd_a_hl();
-        void ldd_hl_a();
-        void ldi_a_hl();
-        void ldi_hl_a();
-        void ldh_n_a();
-        void ldh_a_n();
-
-        // 16 bit loads
-
-        void ld_r16_nn(byte r16);
-        void ld_sp_nn();
-        void ld_sp_hl();
-        void ldhl_sp_n();
-        void ld_nn_sp();
-
-        void push_nn(byte r16);
-        void pop_nn(byte r16);
-
-        void add_a_r1(byte r1);
-        void add_a_hl();
-        void add_a_pc();
-        void addc_a_r1(byte r1);
-        void addc_a_hl();
-        void addc_a_pc();
-        void sub_a_r1(byte r1);
-        void sub_a_hl();
-        void sub_a_pc();
-        void subc_a_r1(byte r1);
-        void subc_a_hl();
-        void subc_a_pc();
-        void and_a_r1(byte r1);
-        void and_a_hl();
-        void and_a_pc();
-        void or_a_r1(byte r1);
-        void or_a_hl();
-        void or_a_pc();
-        void xor_a_r1(byte r1);
-        void xor_a_hl();
-        void xor_a_pc();
-        void cp_a_r1(byte r1);
-        void cp_a_hl();
-        void cp_a_pc();
-        void inc_r1(byte r1);
-        void dec_r1(byte r1);
-
-
-        void add_hl_r16(byte r16);
-        void add_hl_sp();
-        void add_sp_pc();
-        void inc_r16(byte r16);
-        void dec_r16(byte r16);
-
-        void swap_r1(byte r1);
-        void swap_r16(byte r16);
-        void cpl_a();
-        void ccf();
-        void scf();
+        void rlc8(byte *r8);
+        void rl8(byte *r8);
+        void rrc8(byte *r8);
+        void rr8(byte *r8);
+        void sla8(byte *r8);
+        void sra8(byte *r8);
+        void srl8(byte *r8);
         
-        void rlc_r1(byte r1);
-        void rl_r1(byte r1);
-        void rrc_r1(byte r1);
-        void rr_r1(byte r1);
-        void sla_r1(byte r1);
-        void sra_r1(byte r1);
-        void srl_r1(byte r1);
+        void bit(byte *reg_8, byte bit);
+        void bit(PairRegister *reg_16, byte bit);
+        void set(byte *reg_8, byte bit);
+        void set(PairRegister *reg_16, byte bit);
+        void res(byte *reg_8, byte bit);
+        void res(PairRegister *reg_16, byte bit);
         
-        void bit_r1(byte r1, byte bit);
-        void set_r1(byte r1, byte bit);
-        void res_r1(byte r1, byte bit);
-
-        void jp_nn();
-        void jp_cc_nn(byte cc);
-        void jp_hl();
-        void jr_n();        // n is a 8 bit immediate signed value
-        void jr_cc_n(byte cc);
-
-        void call_nn();
-        void call_cc_nn(byte cc);
-
-        void rst_n(byte n);
-
         void ret();
         void store_pc_stack();
-        void push16(byte r1);
-        void pop16(byte r1); 
+        
 
-        void ret_cc(byte cc);
-        void reti();
+        void add8(byte *op1, byte op2);
+        void sub8(byte *op1, byte op2);
+        void and8(byte *op1, byte op2);
+        void or8(byte *op1, byte op2);
+        void xor8(byte *op1, byte op2);
+        void cp8(byte *op1, byte op2);
+        void inc8(byte *op1);
+        void dec8(byte *op1);
 
-        byte add8(byte op1, byte op2);
-        byte sub8(byte op1, byte op2);
-        byte and8(byte op1, byte op2);
-        byte or8(byte op1, byte op2);
-        byte xor8(byte op1, byte op2);
-        void cp(byte op1, byte op2);
-        void inc8(byte op1);
-        void dec8(byte op1);
+        void add16(PairRegister *op1, word op2);
+        void inc16(PairRegister *op1);
+        void dec16(PairRegister *op1);
 
-        word add16(word op1, word op2);
-        word inc16(word op1);
-        word dec16(word op1);
+        void push16(PairRegister *reg_16);
+        void pop16(PairRegister *reg_16); 
 
 
         void set_z_flag(bool value);

@@ -120,6 +120,9 @@ void Emulator::update_graphics() {
         } else if (curr_line < 144) {
             ppu->render_line();
         }
+        else {
+            printf(";"); 
+        }
     }
 };
 
@@ -132,12 +135,11 @@ void Emulator::set_lcd_status() {
         ppu->set_mode(1);
         return;
     }
-    byte curr_line = mmu->LY.get();
     byte last_mode = ppu->get_mode();
 
     bool req_interrupt = false;
 
-    if (curr_line >= 144) {
+    if (mmu->LY.get() >= 144) {
         // V-BLANK area
         ppu->set_mode(1);
         req_interrupt = mmu->STAT.get() & 0x10;
@@ -163,7 +165,7 @@ void Emulator::set_lcd_status() {
         request_interrupt(INTERRUPT_LCDC);
     }
     
-    if (curr_line == mmu->read_memory(0xFF45)) {
+    if (mmu->LY.get() == mmu->LYC.get()) {
         mmu->STAT |= 0x04;
         if (mmu->STAT.get() & 0x40) {
             // bit 6

@@ -23,16 +23,15 @@ MemoryController::MemoryController(Cartridge *cart) {
             break;
     }
 
-    for (int i = 0; i < n_ram_banks; i++) {
+    // create 1 more bank to store the addresses A000-...
+    for (int i = 0; i <= n_ram_banks; i++) {
         byte *ram = new byte[0x2000];
         memset(ram, 0, sizeof(ram));
         ram_banks.push_back(ram);
     }
 
-    if (n_ram_banks > 0) {
-        for (int i = 0; i < 0x2000; i++) {
-            ram_banks[0][i] = cart->rom[0xA000 + i];
-        }
+    for (int i = 0; i < 0x2000; i++) {
+        ram_banks[0][i] = cart->rom[0xA000 + i];
     }
 }
 
@@ -64,14 +63,16 @@ byte MemoryController0::read(word addr) {
         return cart->rom[addr];
     // read value from current ram bank
     else if (addr >= 0xA000 && addr <= 0xBFFF)
-        return ram_banks.at(curr_ram_bank)[addr & 0x1FFF];
+        assert(false);
+        //return ram_banks.at(0)[addr & 0x1FFF];
 
     return 0;
 };
 
 void MemoryController0::write(word addr, byte data) {
     if (addr >= 0xA000 && addr <= 0xBFFF)
-        ram_banks.at(curr_ram_bank)[addr & 0x1FFF] = data;
+        //ram_banks.at(0)[addr & 0x1FFF] = data;
+        assert(false);
 };
 
 /*

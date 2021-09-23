@@ -342,26 +342,25 @@ void initialize_optable_cb() {
 void op_00(Mmu* mmu, Cpu* cp) { ; };
 
 void op_01(Mmu* mmu, Cpu* cp) {
-    cp->registers[C] = mmu->read_memory(++cp->pc);
-    cp->registers[B] = mmu->read_memory(++cp->pc);
+    cp->reg_C = mmu->read_memory(++cp->pc);
+    cp->reg_B = mmu->read_memory(++cp->pc);
 };
 
 void op_02(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[B] << 8) | cp->registers[C],
-                     cp->registers[A]);
+    mmu->write_memory(cp->reg_BC.get(), cp->reg_A);
 };
 
-void op_03(Mmu* mmu, Cpu* cp) { cp->inc_r16(B); };
+void op_03(Mmu* mmu, Cpu* cp) { cp->inc16(&cp->reg_BC); };
 
-void op_04(Mmu* mmu, Cpu* cp) { cp->inc8(B); };
+void op_04(Mmu* mmu, Cpu* cp) { cp->inc8(&cp->reg_B); };
 
-void op_05(Mmu* mmu, Cpu* cp) { cp->dec8(B); };
+void op_05(Mmu* mmu, Cpu* cp) { cp->dec8(&cp->reg_B); };
 
 void op_06(Mmu* mmu, Cpu* cp) {
-    cp->registers[B] = mmu->read_memory(++cp->pc);
+    cp->reg_B = mmu->read_memory(++cp->pc);
 };
 
-void op_07(Mmu* mmu, Cpu* cp) { cp->rlc_r1(A); };
+void op_07(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_A); };
 
 void op_08(Mmu* mmu, Cpu* cp) {
     word nn = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
@@ -369,70 +368,68 @@ void op_08(Mmu* mmu, Cpu* cp) {
     mmu->write_memory(nn, (cp->sp & 0xFF00) << 8);
 };
 
-void op_09(Mmu* mmu, Cpu* cp) { cp->add_hl_r16(B); };
+void op_09(Mmu* mmu, Cpu* cp) { cp->add16(&cp->reg_HL, cp->reg_BC.get()); };
 
 void op_0A(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = mmu->read_memory((cp->registers[B] << 8) | cp->registers[C]);
+    cp->reg_A = mmu->read_memory((cp->reg_B << 8) | cp->reg_C);
 };
 
-void op_0B(Mmu* mmu, Cpu* cp) { cp->dec_r16(B); };
+void op_0B(Mmu* mmu, Cpu* cp) { cp->dec16(&cp->reg_BC); };
 
-void op_0C(Mmu* mmu, Cpu* cp) { cp->inc8(C); };
+void op_0C(Mmu* mmu, Cpu* cp) { cp->inc8(&cp->reg_C); };
 
-void op_0D(Mmu* mmu, Cpu* cp) { cp->dec8(C); };
+void op_0D(Mmu* mmu, Cpu* cp) { cp->dec8(&cp->reg_C); };
 
 void op_0E(Mmu* mmu, Cpu* cp) {
-    cp->registers[C] = mmu->read_memory(++cp->pc);
+    cp->reg_C = mmu->read_memory(++cp->pc);
 };
 
-void op_0F(Mmu* mmu, Cpu* cp) { cp->rrc_r1(A); };
+void op_0F(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_A); };
 
 void op_10(Mmu* mmu, Cpu* cp) {
     // TODO: STOP
 };
 
 void op_11(Mmu* mmu, Cpu* cp) {
-    cp->registers[D] = mmu->read_memory(++cp->pc);
-    cp->registers[E] = mmu->read_memory(++cp->pc);
+    cp->reg_D = mmu->read_memory(++cp->pc);
+    cp->reg_E = mmu->read_memory(++cp->pc);
 };
 
 void op_12(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[D] << 8) | cp->registers[E],
-                     cp->registers[A]);
+    mmu->write_memory(cp->reg_DE.get(), cp->reg_A);
 };
 
-void op_13(Mmu* mmu, Cpu* cp) { cp->inc_r16(D); };
+void op_13(Mmu* mmu, Cpu* cp) { cp->inc16(&cp->reg_DE); };
 
-void op_14(Mmu* mmu, Cpu* cp) { cp->inc8(D); };
+void op_14(Mmu* mmu, Cpu* cp) { cp->inc8(&cp->reg_D); };
 
-void op_15(Mmu* mmu, Cpu* cp) { cp->dec8(D); };
+void op_15(Mmu* mmu, Cpu* cp) { cp->dec8(&cp->reg_D); };
 
 void op_16(Mmu* mmu, Cpu* cp) {
-    cp->registers[D] = mmu->read_memory(++cp->pc);
+    cp->reg_D = mmu->read_memory(++cp->pc);
 };
 
-void op_17(Mmu* mmu, Cpu* cp) { cp->rl_r1(A); };
+void op_17(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_A); };
 
 void op_18(Mmu* mmu, Cpu* cp) { cp->pc += mmu->read_memory(++cp->pc) - 1; };
 
-void op_19(Mmu* mmu, Cpu* cp) { cp->add_hl_r16(D); };
+void op_19(Mmu* mmu, Cpu* cp) { cp->add16(&cp->reg_HL, cp->reg_DE.get()); };
 
 void op_1A(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        mmu->read_memory((cp->registers[D] << 8) | cp->registers[E]);
+    cp->reg_A = mmu->read_memory(cp->reg_DE.get());
 };
 
-void op_1B(Mmu* mmu, Cpu* cp) { cp->dec_r16(D); };
+void op_1B(Mmu* mmu, Cpu* cp) { cp->dec16(&cp->reg_DE); };
 
-void op_1C(Mmu* mmu, Cpu* cp) { cp->inc8(E); };
+void op_1C(Mmu* mmu, Cpu* cp) { cp->inc8(&cp->reg_E); };
 
-void op_1D(Mmu* mmu, Cpu* cp) { cp->dec8(E); };
+void op_1D(Mmu* mmu, Cpu* cp) { cp->dec8(&cp->reg_E); };
 
 void op_1E(Mmu* mmu, Cpu* cp) {
-    cp->registers[E] = mmu->read_memory(++cp->pc);
+    cp->reg_E = mmu->read_memory(++cp->pc);
 };
 
-void op_1F(Mmu* mmu, Cpu* cp) { cp->rr_r1(A); };
+void op_1F(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_A); };
 
 void op_20(Mmu* mmu, Cpu* cp) {
     cp->pc++;
@@ -442,29 +439,26 @@ void op_20(Mmu* mmu, Cpu* cp) {
 };
 
 void op_21(Mmu* mmu, Cpu* cp) {
-    cp->registers[L] = mmu->read_memory(++cp->pc);
-    cp->registers[H] = mmu->read_memory(++cp->pc);
+    cp->reg_L = mmu->read_memory(++cp->pc);
+    cp->reg_H = mmu->read_memory(++cp->pc);
 };
 
 void op_22(Mmu* mmu, Cpu* cp) {
-    word hl = (cp->registers[H] << 8) | cp->registers[L];
-    mmu->write_memory(hl++, cp->registers[A]);
-    cp->registers[H] = hl & 0x00FF;
-    cp->registers[L] = (hl & 0xFF00) >> 8;
+    mmu->write_memory(cp->reg_HL++, cp->reg_A);
 };
 
-void op_23(Mmu* mmu, Cpu* cp) { cp->inc_r16(H); };
+void op_23(Mmu* mmu, Cpu* cp) { cp->inc16(&cp->reg_HL); };
 
-void op_24(Mmu* mmu, Cpu* cp) { cp->inc8(H); };
+void op_24(Mmu* mmu, Cpu* cp) { cp->inc8(&cp->reg_H); };
 
-void op_25(Mmu* mmu, Cpu* cp) { cp->dec8(H); };
+void op_25(Mmu* mmu, Cpu* cp) { cp->dec8(&cp->reg_H); };
 
 void op_26(Mmu* mmu, Cpu* cp) {
-    cp->registers[H] = mmu->read_memory(++cp->pc);
+    cp->reg_H = mmu->read_memory(++cp->pc);
 };
 
 void op_27(Mmu* mmu, Cpu* cp) {
-    word a = cp->registers[A];
+    word a = cp->reg_A;
     if (!cp->get_n_flag()) {
         if (cp->get_h_flag() || (a & 0x0f) > 0x09) {
             a += 0x6;
@@ -480,11 +474,11 @@ void op_27(Mmu* mmu, Cpu* cp) {
             a -= 0x6;
         }
     }
-    cp->registers[A] = a;
+    cp->reg_A = a;
 
     cp->set_h_flag(0);
     cp->set_c_flag(a >= 0x100);
-    cp->set_z_flag(cp->registers[A] == 0);
+    cp->set_z_flag(cp->reg_A == 0);
 };
 
 void op_28(Mmu* mmu, Cpu* cp) {
@@ -492,30 +486,27 @@ void op_28(Mmu* mmu, Cpu* cp) {
     if (cp->get_z_flag()) cp->pc += (char)mmu->read_memory(cp->pc);    // signed value
 };
 
-void op_29(Mmu* mmu, Cpu* cp) { cp->add_hl_r16(H); };
+void op_29(Mmu* mmu, Cpu* cp) { cp->add16(&cp->reg_HL, cp->reg_HL.get()); };
 
 void op_2A(Mmu* mmu, Cpu* cp) {
-    word hl = (cp->registers[H] << 8) | cp->registers[L];
-    cp->registers[A] = mmu->read_memory(hl++);
-    cp->registers[H] = hl & 0x00FF;
-    cp->registers[L] = (hl & 0xFF00) >> 8;
+    cp->reg_A = mmu->read_memory(cp->reg_HL++);
 };
 
-void op_2B(Mmu* mmu, Cpu* cp) { cp->dec_r16(H); };
+void op_2B(Mmu* mmu, Cpu* cp) { cp->dec16(&cp->reg_HL); };
 
-void op_2C(Mmu* mmu, Cpu* cp) { cp->inc8(L); };
+void op_2C(Mmu* mmu, Cpu* cp) { cp->inc8(&cp->reg_L); };
 
-void op_2D(Mmu* mmu, Cpu* cp) { cp->dec8(L); };
+void op_2D(Mmu* mmu, Cpu* cp) { cp->dec8(&cp->reg_L); };
 
 void op_2E(Mmu* mmu, Cpu* cp) {
-    cp->registers[L] = mmu->read_memory(++cp->pc);
+    cp->reg_L = mmu->read_memory(++cp->pc);
 };
 
 void op_2F(Mmu* mmu, Cpu* cp) {
     cp->set_n_flag(1);
     cp->set_h_flag(1);
 
-    cp->registers[A] = ~cp->registers[A];
+    cp->reg_A = ~cp->reg_A;
 };
 
 void op_30(Mmu* mmu, Cpu* cp) {
@@ -528,10 +519,7 @@ void op_31(Mmu* mmu, Cpu* cp) {
 };
 
 void op_32(Mmu* mmu, Cpu* cp) {
-    word hl = (cp->registers[H] << 8) | cp->registers[L];
-    mmu->write_memory(hl--, cp->registers[A]);
-    cp->registers[L] = hl & 0x00FF;
-    cp->registers[H] = (hl & 0xFF00) >> 8;
+    mmu->write_memory(cp->reg_HL--, cp->reg_A);
 };
 
 void op_33(Mmu* mmu, Cpu* cp) {
@@ -540,7 +528,7 @@ void op_33(Mmu* mmu, Cpu* cp) {
 
 void op_34(Mmu* mmu, Cpu* cp) {
     // inc the memory address pointed by HL
-    word hl = (cp->registers[H] << 8) | cp->registers[L];
+    word hl = cp->reg_HL.get();
     byte value =  mmu->read_memory(hl) + 1;
     mmu->write_memory(hl, value);
 
@@ -550,7 +538,7 @@ void op_34(Mmu* mmu, Cpu* cp) {
 };
 
 void op_35(Mmu* mmu, Cpu* cp) {
-    word hl = (cp->registers[H] << 8) | cp->registers[L];
+    word hl = cp->reg_HL.get();
     mmu->write_memory(hl, mmu->read_memory(hl) + 1);
     
     cp->set_n_flag(1);
@@ -559,8 +547,7 @@ void op_35(Mmu* mmu, Cpu* cp) {
 };
 
 void op_36(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     mmu->read_memory(++cp->pc));
+    mmu->write_memory(cp->reg_HL.get(), mmu->read_memory(++cp->pc));
 };
 
 void op_37(Mmu* mmu, Cpu* cp) {
@@ -574,23 +561,20 @@ void op_38(Mmu* mmu, Cpu* cp) {
     if (cp->get_c_flag()) cp->pc += (char)mmu->read_memory(cp->pc);    // signed value
 };
 
-void op_39(Mmu* mmu, Cpu* cp) { cp->add_hl_sp(); };
+void op_39(Mmu* mmu, Cpu* cp) { cp->add16(&cp->reg_HL, cp->sp); };
 
 void op_3A(Mmu* mmu, Cpu* cp) {
-    word hl = (cp->registers[H] << 8) | cp->registers[L];
-    cp->registers[A] = mmu->read_memory(hl--);
-    cp->registers[H] = hl & 0x00FF;
-    cp->registers[L] = (hl & 0xFF00) >> 8;
+    cp->reg_A = mmu->read_memory(cp->reg_HL--);
 };
 
 void op_3B(Mmu* mmu, Cpu* cp) { cp->sp--; };
 
-void op_3C(Mmu* mmu, Cpu* cp) { cp->inc8(A); };
+void op_3C(Mmu* mmu, Cpu* cp) { cp->inc8(&cp->reg_A); };
 
-void op_3D(Mmu* mmu, Cpu* cp) { cp->dec8(A); };
+void op_3D(Mmu* mmu, Cpu* cp) { cp->dec8(&cp->reg_A); };
 
 void op_3E(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = mmu->read_memory(++cp->pc);
+    cp->reg_A = mmu->read_memory(++cp->pc);
 };
 
 void op_3F(Mmu* mmu, Cpu* cp) {
@@ -599,148 +583,136 @@ void op_3F(Mmu* mmu, Cpu* cp) {
     cp->set_c_flag(~(cp->get_c_flag()));
 };
 
-void op_40(Mmu* mmu, Cpu* cp) { cp->registers[B] = cp->registers[B]; };
+void op_40(Mmu* mmu, Cpu* cp) { cp->reg_B = cp->reg_B; };
 
-void op_41(Mmu* mmu, Cpu* cp) { cp->registers[B] = cp->registers[C]; };
+void op_41(Mmu* mmu, Cpu* cp) { cp->reg_B = cp->reg_C; };
 
-void op_42(Mmu* mmu, Cpu* cp) { cp->registers[B] = cp->registers[D]; };
+void op_42(Mmu* mmu, Cpu* cp) { cp->reg_B = cp->reg_D; };
 
-void op_43(Mmu* mmu, Cpu* cp) { cp->registers[B] = cp->registers[E]; };
+void op_43(Mmu* mmu, Cpu* cp) { cp->reg_B = cp->reg_E; };
 
-void op_44(Mmu* mmu, Cpu* cp) { cp->registers[B] = cp->registers[H]; };
+void op_44(Mmu* mmu, Cpu* cp) { cp->reg_B = cp->reg_H; };
 
-void op_45(Mmu* mmu, Cpu* cp) { cp->registers[B] = cp->registers[L]; };
+void op_45(Mmu* mmu, Cpu* cp) { cp->reg_B = cp->reg_L; };
 
 void op_46(Mmu* mmu, Cpu* cp) {
-    cp->registers[B] =
-        mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]);
+    cp->reg_B = mmu->read_memory(cp->reg_HL.get());
 };
 
-void op_47(Mmu* mmu, Cpu* cp) { cp->registers[B] = cp->registers[A]; };
+void op_47(Mmu* mmu, Cpu* cp) { cp->reg_B = cp->reg_A; };
 
-void op_48(Mmu* mmu, Cpu* cp) { cp->registers[C] = cp->registers[B]; };
+void op_48(Mmu* mmu, Cpu* cp) { cp->reg_C = cp->reg_B; };
 
-void op_49(Mmu* mmu, Cpu* cp) { cp->registers[C] = cp->registers[C]; };
+void op_49(Mmu* mmu, Cpu* cp) { cp->reg_C = cp->reg_C; };
 
-void op_4A(Mmu* mmu, Cpu* cp) { cp->registers[C] = cp->registers[D]; };
+void op_4A(Mmu* mmu, Cpu* cp) { cp->reg_C = cp->reg_D; };
 
-void op_4B(Mmu* mmu, Cpu* cp) { cp->registers[C] = cp->registers[E]; };
+void op_4B(Mmu* mmu, Cpu* cp) { cp->reg_C = cp->reg_E; };
 
-void op_4C(Mmu* mmu, Cpu* cp) { cp->registers[C] = cp->registers[H]; };
+void op_4C(Mmu* mmu, Cpu* cp) { cp->reg_C = cp->reg_H; };
 
-void op_4D(Mmu* mmu, Cpu* cp) { cp->registers[C] = cp->registers[L]; };
+void op_4D(Mmu* mmu, Cpu* cp) { cp->reg_C = cp->reg_L; };
 
 void op_4E(Mmu* mmu, Cpu* cp) {
-    cp->registers[C] =
-        mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]);
+    cp->reg_C = mmu->read_memory(cp->reg_HL.get());
 };
 
-void op_4F(Mmu* mmu, Cpu* cp) { cp->registers[C] = cp->registers[A]; };
+void op_4F(Mmu* mmu, Cpu* cp) { cp->reg_C = cp->reg_A; };
 
-void op_50(Mmu* mmu, Cpu* cp) { cp->registers[D] = cp->registers[B]; };
+void op_50(Mmu* mmu, Cpu* cp) { cp->reg_D = cp->reg_B; };
 
-void op_51(Mmu* mmu, Cpu* cp) { cp->registers[D] = cp->registers[C]; };
+void op_51(Mmu* mmu, Cpu* cp) { cp->reg_D = cp->reg_C; };
 
-void op_52(Mmu* mmu, Cpu* cp) { cp->registers[D] = cp->registers[D]; };
+void op_52(Mmu* mmu, Cpu* cp) { cp->reg_D = cp->reg_D; };
 
-void op_53(Mmu* mmu, Cpu* cp) { cp->registers[D] = cp->registers[E]; };
+void op_53(Mmu* mmu, Cpu* cp) { cp->reg_D = cp->reg_E; };
 
-void op_54(Mmu* mmu, Cpu* cp) { cp->registers[D] = cp->registers[H]; };
+void op_54(Mmu* mmu, Cpu* cp) { cp->reg_D = cp->reg_H; };
 
-void op_55(Mmu* mmu, Cpu* cp) { cp->registers[D] = cp->registers[L]; };
+void op_55(Mmu* mmu, Cpu* cp) { cp->reg_D = cp->reg_L; };
 
 void op_56(Mmu* mmu, Cpu* cp) {
-    cp->registers[D] =
-        mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]);
+    cp->reg_D = mmu->read_memory(cp->reg_HL.get());
 };
 
-void op_57(Mmu* mmu, Cpu* cp) { cp->registers[D] = cp->registers[A]; };
+void op_57(Mmu* mmu, Cpu* cp) { cp->reg_D = cp->reg_A; };
 
-void op_58(Mmu* mmu, Cpu* cp) { cp->registers[E] = cp->registers[B]; };
+void op_58(Mmu* mmu, Cpu* cp) { cp->reg_E = cp->reg_B; };
 
-void op_59(Mmu* mmu, Cpu* cp) { cp->registers[E] = cp->registers[C]; };
+void op_59(Mmu* mmu, Cpu* cp) { cp->reg_E = cp->reg_C; };
 
-void op_5A(Mmu* mmu, Cpu* cp) { cp->registers[E] = cp->registers[D]; };
+void op_5A(Mmu* mmu, Cpu* cp) { cp->reg_E = cp->reg_D; };
 
-void op_5B(Mmu* mmu, Cpu* cp) { cp->registers[E] = cp->registers[E]; };
+void op_5B(Mmu* mmu, Cpu* cp) { cp->reg_E = cp->reg_E; };
 
-void op_5C(Mmu* mmu, Cpu* cp) { cp->registers[E] = cp->registers[H]; };
+void op_5C(Mmu* mmu, Cpu* cp) { cp->reg_E = cp->reg_H; };
 
-void op_5D(Mmu* mmu, Cpu* cp) { cp->registers[E] = cp->registers[L]; };
+void op_5D(Mmu* mmu, Cpu* cp) { cp->reg_E = cp->reg_L; };
 
 void op_5E(Mmu* mmu, Cpu* cp) {
-    cp->registers[E] =
-        mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]);
+    cp->reg_E = mmu->read_memory(cp->reg_HL.get());
 };
 
-void op_5F(Mmu* mmu, Cpu* cp) { cp->registers[E] = cp->registers[A]; };
+void op_5F(Mmu* mmu, Cpu* cp) { cp->reg_E = cp->reg_A; };
 
-void op_60(Mmu* mmu, Cpu* cp) { cp->registers[H] = cp->registers[B]; };
+void op_60(Mmu* mmu, Cpu* cp) { cp->reg_H = cp->reg_B; };
 
-void op_61(Mmu* mmu, Cpu* cp) { cp->registers[H] = cp->registers[C]; };
+void op_61(Mmu* mmu, Cpu* cp) { cp->reg_H = cp->reg_C; };
 
-void op_62(Mmu* mmu, Cpu* cp) { cp->registers[H] = cp->registers[D]; };
+void op_62(Mmu* mmu, Cpu* cp) { cp->reg_H = cp->reg_D; };
 
-void op_63(Mmu* mmu, Cpu* cp) { cp->registers[H] = cp->registers[E]; };
+void op_63(Mmu* mmu, Cpu* cp) { cp->reg_H = cp->reg_E; };
 
-void op_64(Mmu* mmu, Cpu* cp) { cp->registers[H] = cp->registers[H]; };
+void op_64(Mmu* mmu, Cpu* cp) { cp->reg_H = cp->reg_H; };
 
-void op_65(Mmu* mmu, Cpu* cp) { cp->registers[H] = cp->registers[L]; };
+void op_65(Mmu* mmu, Cpu* cp) { cp->reg_H = cp->reg_L; };
 
 void op_66(Mmu* mmu, Cpu* cp) {
-    cp->registers[H] =
-        mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]);
+    cp->reg_H = mmu->read_memory(cp->reg_HL.get());
 };
 
-void op_67(Mmu* mmu, Cpu* cp) { cp->registers[H] = cp->registers[A]; };
+void op_67(Mmu* mmu, Cpu* cp) { cp->reg_H = cp->reg_A; };
 
-void op_68(Mmu* mmu, Cpu* cp) { cp->registers[L] = cp->registers[B]; };
+void op_68(Mmu* mmu, Cpu* cp) { cp->reg_L = cp->reg_B; };
 
-void op_69(Mmu* mmu, Cpu* cp) { cp->registers[L] = cp->registers[C]; };
+void op_69(Mmu* mmu, Cpu* cp) { cp->reg_L = cp->reg_C; };
 
-void op_6A(Mmu* mmu, Cpu* cp) { cp->registers[L] = cp->registers[D]; };
+void op_6A(Mmu* mmu, Cpu* cp) { cp->reg_L = cp->reg_D; };
 
-void op_6B(Mmu* mmu, Cpu* cp) { cp->registers[L] = cp->registers[E]; };
+void op_6B(Mmu* mmu, Cpu* cp) { cp->reg_L = cp->reg_E; };
 
-void op_6C(Mmu* mmu, Cpu* cp) { cp->registers[L] = cp->registers[H]; };
+void op_6C(Mmu* mmu, Cpu* cp) { cp->reg_L = cp->reg_H; };
 
-void op_6D(Mmu* mmu, Cpu* cp) { cp->registers[L] = cp->registers[L]; };
+void op_6D(Mmu* mmu, Cpu* cp) { cp->reg_L = cp->reg_L; };
 
 void op_6E(Mmu* mmu, Cpu* cp) {
-    cp->registers[L] =
-        mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]);
+    cp->reg_L = mmu->read_memory(cp->reg_HL.get());
 };
 
-void op_6F(Mmu* mmu, Cpu* cp) { cp->registers[L] = cp->registers[A]; };
+void op_6F(Mmu* mmu, Cpu* cp) { cp->reg_L = cp->reg_A; };
 
 void op_70(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     cp->registers[B]);
+    mmu->write_memory(cp->reg_HL.get(), cp->reg_B);
 };
 
 void op_71(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     cp->registers[C]);
+    mmu->write_memory(cp->reg_HL.get(), cp->reg_C);
 };
 
 void op_72(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     cp->registers[D]);
+    mmu->write_memory(cp->reg_HL.get(), cp->reg_D);
 };
 
 void op_73(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     cp->registers[E]);
+    mmu->write_memory(cp->reg_HL.get(), cp->reg_E);
 };
 
 void op_74(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     cp->registers[H]);
+    mmu->write_memory(cp->reg_HL.get(), cp->reg_H);
 };
 
 void op_75(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     cp->registers[L]);
+    mmu->write_memory(cp->reg_HL.get(), cp->reg_L);
 };
 
 void op_76(Mmu* mmu, Cpu* cp) {
@@ -748,314 +720,282 @@ void op_76(Mmu* mmu, Cpu* cp) {
 };
 
 void op_77(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory((cp->registers[H] << 8) | cp->registers[L],
-                     cp->registers[A]);
+    mmu->write_memory(cp->reg_HL.get(), cp->reg_A);
 };
 
-void op_78(Mmu* mmu, Cpu* cp) { cp->registers[A] = cp->registers[B]; };
+void op_78(Mmu* mmu, Cpu* cp) { cp->reg_A = cp->reg_B; };
 
-void op_79(Mmu* mmu, Cpu* cp) { cp->registers[A] = cp->registers[C]; };
+void op_79(Mmu* mmu, Cpu* cp) { cp->reg_A = cp->reg_C; };
 
-void op_7A(Mmu* mmu, Cpu* cp) { cp->registers[A] = cp->registers[D]; };
+void op_7A(Mmu* mmu, Cpu* cp) { cp->reg_A = cp->reg_D; };
 
-void op_7B(Mmu* mmu, Cpu* cp) { cp->registers[A] = cp->registers[E]; };
+void op_7B(Mmu* mmu, Cpu* cp) { cp->reg_A = cp->reg_E; };
 
-void op_7C(Mmu* mmu, Cpu* cp) { cp->registers[A] = cp->registers[H]; };
+void op_7C(Mmu* mmu, Cpu* cp) { cp->reg_A = cp->reg_H; };
 
-void op_7D(Mmu* mmu, Cpu* cp) { cp->registers[A] = cp->registers[L]; };
+void op_7D(Mmu* mmu, Cpu* cp) { cp->reg_A = cp->reg_L; };
 
 void op_7E(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]);
+    cp->reg_A = mmu->read_memory(cp->reg_HL.get());
 };
 
-void op_7F(Mmu* mmu, Cpu* cp) { cp->registers[A] = cp->registers[A]; };
+void op_7F(Mmu* mmu, Cpu* cp) { cp->reg_A = cp->reg_A; };
 
 void op_80(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], cp->registers[B]);
+    cp->add8(&cp->reg_A, cp->reg_B);
 };
 
 void op_81(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], cp->registers[C]);
+    cp->add8(&cp->reg_A, cp->reg_C);
 };
 
 void op_82(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], cp->registers[D]);
+    cp->add8(&cp->reg_A, cp->reg_D);
 };
 
 void op_83(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], cp->registers[E]);
+    cp->add8(&cp->reg_A, cp->reg_E);
 };
 
 void op_84(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], cp->registers[H]);
+    cp->add8(&cp->reg_A, cp->reg_H);
 };
 
 void op_85(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], cp->registers[L]);
+    cp->add8(&cp->reg_A, cp->reg_L);
 };
 
 void op_86(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A],
-                 mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]));
+    cp->add8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()));
 };
 
 void op_87(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], cp->registers[A]);
+    cp->add8(&cp->reg_A, cp->reg_A);
 };
 
 void op_88(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A], cp->registers[B] + cp->get_c_flag());
+    cp->add8(&cp->reg_A, cp->reg_B + cp->get_c_flag());
 };
 
 void op_89(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A], cp->registers[C] + cp->get_c_flag());
+    cp->add8(&cp->reg_A, cp->reg_C + cp->get_c_flag());
 };
 
 void op_8A(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A], cp->registers[D] + cp->get_c_flag());
+    cp->add8(&cp->reg_A, cp->reg_D + cp->get_c_flag());
 };
 
 void op_8B(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A], cp->registers[E] + cp->get_c_flag());
+    cp->add8(&cp->reg_A, cp->reg_E + cp->get_c_flag());
 };
 
 void op_8C(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A], cp->registers[H] + cp->get_c_flag());
+    cp->add8(&cp->reg_A, cp->reg_H + cp->get_c_flag());
 };
 
 void op_8D(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A], cp->registers[L] + cp->get_c_flag());
+    cp->add8(&cp->reg_A, cp->reg_L + cp->get_c_flag());
 };
 
 void op_8E(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A],
-                 mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]) +
-                     cp->get_c_flag());
+    cp->add8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()) + cp->get_c_flag());
 };
 
 void op_8F(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->add8(cp->registers[A], cp->registers[A] + cp->get_c_flag());
+    cp->add8(&cp->reg_A, cp->reg_A + cp->get_c_flag());
 };
 
 void op_90(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], cp->registers[B]);
+    cp->sub8(&cp->reg_A, cp->reg_B);
 };
 
 void op_91(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], cp->registers[C]);
+    cp->sub8(&cp->reg_A, cp->reg_C);
 };
 
 void op_92(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], cp->registers[D]);
+    cp->sub8(&cp->reg_A, cp->reg_D);
 };
 
 void op_93(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], cp->registers[E]);
+    cp->sub8(&cp->reg_A, cp->reg_E);
 };
 
 void op_94(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], cp->registers[H]);
+    cp->sub8(&cp->reg_A, cp->reg_H);
 };
 
 void op_95(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], cp->registers[L]);
+    cp->sub8(&cp->reg_A, cp->reg_L);
 };
 
 void op_96(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A],
-                 mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]));
+    cp->sub8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()));
 };
 
 void op_97(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], cp->registers[A]);
+    cp->sub8(&cp->reg_A, cp->reg_A);
 };
 
 void op_98(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A], cp->registers[B] + cp->get_c_flag());
+    cp->sub8(&cp->reg_A, cp->reg_B + cp->get_c_flag());
 };
 
 void op_99(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A], cp->registers[C] + cp->get_c_flag());
+    cp->sub8(&cp->reg_A, cp->reg_C + cp->get_c_flag());
 };
 
 void op_9A(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A], cp->registers[D] + cp->get_c_flag());
+    cp->sub8(&cp->reg_A, cp->reg_D + cp->get_c_flag());
 };
 
 void op_9B(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A], cp->registers[E] + cp->get_c_flag());
+    cp->sub8(&cp->reg_A, cp->reg_E + cp->get_c_flag());
 };
 
 void op_9C(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A], cp->registers[H] + cp->get_c_flag());
+    cp->sub8(&cp->reg_A, cp->reg_H + cp->get_c_flag());
 };
 
 void op_9D(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A], cp->registers[L] + cp->get_c_flag());
+    cp->sub8(&cp->reg_A, cp->reg_L + cp->get_c_flag());
 };
 
 void op_9E(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A],
-                 mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]) +
-                     cp->get_c_flag());
+    cp->sub8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()) + cp->get_c_flag());
 };
 
 void op_9F(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->sub8(cp->registers[A], cp->registers[A] + cp->get_c_flag());
+    cp->sub8(&cp->reg_A, cp->reg_A + cp->get_c_flag());
 };
 
 void op_A0(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], cp->registers[B]);
+    cp->and8(&cp->reg_A, cp->reg_B);
 };
 
 void op_A1(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], cp->registers[C]);
+    cp->and8(&cp->reg_A, cp->reg_C);
 };
 
 void op_A2(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], cp->registers[D]);
+    cp->and8(&cp->reg_A, cp->reg_D);
 };
 
 void op_A3(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], cp->registers[E]);
+    cp->and8(&cp->reg_A, cp->reg_E);
 };
 
 void op_A4(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], cp->registers[H]);
+    cp->and8(&cp->reg_A, cp->reg_H);
 };
 
 void op_A5(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], cp->registers[L]);
+    cp->and8(&cp->reg_A, cp->reg_L);
 };
 
 void op_A6(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->and8(cp->registers[A],
-                 mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]));
+    cp->and8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()));
 };
 
 void op_A7(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], cp->registers[A]);
+    cp->and8(&cp->reg_A, cp->reg_A);
 };
 
 void op_A8(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], cp->registers[B]);
+    cp->xor8(&cp->reg_A, cp->reg_B);
 };
 
 void op_A9(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], cp->registers[C]);
+    cp->xor8(&cp->reg_A, cp->reg_C);
 };
 
 void op_AA(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], cp->registers[D]);
+    cp->xor8(&cp->reg_A, cp->reg_D);
 };
 
 void op_AB(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], cp->registers[E]);
+    cp->xor8(&cp->reg_A, cp->reg_E);
 };
 
 void op_AC(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], cp->registers[H]);
+    cp->xor8(&cp->reg_A, cp->reg_H);
 };
 
 void op_AD(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], cp->registers[L]);
+    cp->xor8(&cp->reg_A, cp->reg_L);
 };
 
 void op_AE(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->xor8(cp->registers[A],
-                 mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]));
+    cp->xor8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()));
 };
 
 void op_AF(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], cp->registers[A]);
+    cp->xor8(&cp->reg_A, cp->reg_A);
 };
 
 void op_B0(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], cp->registers[B]);
+    cp->or8(&cp->reg_A, cp->reg_B);
 };
 
 void op_B1(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], cp->registers[C]);
+    cp->or8(&cp->reg_A, cp->reg_C);
 };
 
 void op_B2(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], cp->registers[D]);
+    cp->or8(&cp->reg_A, cp->reg_D);
 };
 
 void op_B3(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], cp->registers[E]);
+    cp->or8(&cp->reg_A, cp->reg_E);
 };
 
 void op_B4(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], cp->registers[H]);
+    cp->or8(&cp->reg_A, cp->reg_H);
 };
 
 void op_B5(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], cp->registers[L]);
+    cp->or8(&cp->reg_A, cp->reg_L);
 };
 
 void op_B6(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        cp->or8(cp->registers[A],
-                mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]));
+    cp->or8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()));
 };
 
 void op_B7(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], cp->registers[A]);
+    cp->or8(&cp->reg_A, cp->reg_A);
 };
 
 void op_B8(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], cp->registers[B]);
+    cp->cp8(&cp->reg_A, cp->reg_B);
 };
 
 void op_B9(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], cp->registers[C]);
+    cp->cp8(&cp->reg_A, cp->reg_C);
 };
 
 void op_BA(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], cp->registers[D]);
+    cp->cp8(&cp->reg_A, cp->reg_D);
 };
 
 void op_BB(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], cp->registers[E]);
+    cp->cp8(&cp->reg_A, cp->reg_E);
 };
 
 void op_BC(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], cp->registers[H]);
+    cp->cp8(&cp->reg_A, cp->reg_H);
 };
 
 void op_BD(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], cp->registers[L]);
+    cp->cp8(&cp->reg_A, cp->reg_L);
 };
 
 void op_BE(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A],
-           mmu->read_memory((cp->registers[H] << 8) | cp->registers[L]));
+    cp->cp8(&cp->reg_A,
+           mmu->read_memory(cp->reg_HL.get()));
 };
 
 void op_BF(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], cp->registers[A]);
+    cp->cp8(&cp->reg_A, cp->reg_A);
 };
 
 void op_C0(Mmu* mmu, Cpu* cp) {
@@ -1064,8 +1004,7 @@ void op_C0(Mmu* mmu, Cpu* cp) {
 };
 
 void op_C1(Mmu* mmu, Cpu* cp) {
-    // TODO: LSB first, assuming
-    cp->pop16(B);
+    cp->pop16(&cp->reg_BC);
 };
 
 void op_C2(Mmu* mmu, Cpu* cp) {
@@ -1085,21 +1024,15 @@ void op_C4(Mmu* mmu, Cpu* cp) {
         cp->store_pc_stack();
         cp->pc = nn - 1;
     }
-}
+};
 
-void op_C5(Mmu* mmu, Cpu* cp) { cp->push16(B); };
+void op_C5(Mmu* mmu, Cpu* cp) { cp->push16(&cp->reg_BC); };
 
 void op_C6(Mmu* mmu, Cpu* cp) {
-    // FIXME: is it the value of the next byte or the memory address pointed by
-    // that? since memory addrs are 2bytes and we are only reading 1 then I'll
-    // guess that this is only the value
-    cp->registers[A] = cp->add8(cp->registers[A], ++cp->pc);
+    cp->add8(&cp->reg_A, ++cp->pc);
 };
 
 void op_C7(Mmu* mmu, Cpu* cp) {
-    // FIXME: since we are increasing the value of pc after the loop
-    // usually we reduce it by 1 here, but it will overflow
-    // ig there won't be a problem...
     cp->store_pc_stack();
     cp->pc = 0x00 - 1;
 };
@@ -1117,7 +1050,6 @@ void op_CA(Mmu* mmu, Cpu* cp) {
 
 void op_CC(Mmu* mmu, Cpu* cp) {
     word nn = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
-    ;
 
     if (cp->get_z_flag()) {
         cp->store_pc_stack();
@@ -1132,7 +1064,7 @@ void op_CD(Mmu* mmu, Cpu* cp) {
 };
 
 void op_CE(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->add8(cp->registers[A], ++cp->pc + cp->get_c_flag());
+    cp->add8(&cp->reg_A, ++cp->pc + cp->get_c_flag());
 }
 
 void op_CF(Mmu* mmu, Cpu* cp) {
@@ -1144,7 +1076,7 @@ void op_D0(Mmu* mmu, Cpu* cp) {
     if (!cp->get_c_flag()) cp->ret();
 };
 
-void op_D1(Mmu* mmu, Cpu* cp) { cp->pop16(D); };
+void op_D1(Mmu* mmu, Cpu* cp) { cp->pop16(&cp->reg_DE); };
 
 void op_D2(Mmu* mmu, Cpu* cp) {
     word nn = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
@@ -1153,7 +1085,6 @@ void op_D2(Mmu* mmu, Cpu* cp) {
 
 void op_D4(Mmu* mmu, Cpu* cp) {
     word nn = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
-    ;
 
     if (!cp->get_c_flag()) {
         cp->store_pc_stack();
@@ -1161,10 +1092,10 @@ void op_D4(Mmu* mmu, Cpu* cp) {
     }
 };
 
-void op_D5(Mmu* mmu, Cpu* cp) { cp->push16(D); };
+void op_D5(Mmu* mmu, Cpu* cp) { cp->push16(&cp->reg_DE); };
 
 void op_D6(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->sub8(cp->registers[A], ++cp->pc);
+    cp->sub8(&cp->reg_A, ++cp->pc);
 };
 
 void op_D7(Mmu* mmu, Cpu* cp) {
@@ -1188,7 +1119,6 @@ void op_DA(Mmu* mmu, Cpu* cp) {
     
 void op_DC(Mmu* mmu, Cpu* cp) {
     word nn = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
-    ;
 
     if (cp->get_c_flag()) {
         cp->store_pc_stack();
@@ -1202,19 +1132,19 @@ void op_DF(Mmu* mmu, Cpu* cp) {
 };
 
 void op_E0(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory(0xFF00 + mmu->read_memory(++cp->pc), cp->registers[A]);
+    mmu->write_memory(0xFF00 + mmu->read_memory(++cp->pc), cp->reg_A);
 };
 
-void op_E1(Mmu* mmu, Cpu* cp) { cp->pop16(H); };
+void op_E1(Mmu* mmu, Cpu* cp) { cp->pop16(&cp->reg_HL); };
 
 void op_E2(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory(0xFF00 + cp->registers[C], cp->registers[A]);
+    mmu->write_memory(0xFF00 + cp->reg_C, cp->reg_A);
 };
 
-void op_E5(Mmu* mmu, Cpu* cp) { cp->push16(H); };
+void op_E5(Mmu* mmu, Cpu* cp) { cp->push16(&cp->reg_HL); };
 
 void op_E6(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->and8(cp->registers[A], ++cp->pc);
+    cp->and8(&cp->reg_A, ++cp->pc);
 };
 
 void op_E7(Mmu* mmu, Cpu* cp) {
@@ -1235,18 +1165,15 @@ void op_E8(Mmu* mmu, Cpu* cp) {
 };
 
 void op_E9(Mmu* mmu, Cpu* cp) {
-    // FIXME: jump to address contained in HL
-    // the value of HL or the value of the address it is pointing to??
-    cp->pc = mmu->read_memory(((cp->registers[H] << 8) | cp->registers[L])) - 1;
+    cp->pc = mmu->read_memory((cp->reg_HL.get())) - 1;
 };
 
 void op_EA(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory(mmu->read_memory(++cp->pc | (++cp->pc << 8)),
-                     cp->registers[A]);
+    mmu->write_memory(mmu->read_memory(++cp->pc | (++cp->pc << 8)), cp->reg_A);
 };
 
 void op_EE(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->xor8(cp->registers[A], ++cp->pc);
+    cp->xor8(&cp->reg_A, ++cp->pc);
 };
 
 void op_EF(Mmu* mmu, Cpu* cp) {
@@ -1255,21 +1182,21 @@ void op_EF(Mmu* mmu, Cpu* cp) {
 };
 
 void op_F0(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = mmu->read_memory(0xFF00 + mmu->read_memory(++cp->pc));
+    cp->reg_A = mmu->read_memory(0xFF00 + mmu->read_memory(++cp->pc));
 };
 
-void op_F1(Mmu* mmu, Cpu* cp) { cp->pop16(A); };
+void op_F1(Mmu* mmu, Cpu* cp) { cp->pop16(&cp->reg_AF); };
 
 void op_F2(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = mmu->read_memory(0xFF00 + cp->registers[C]);
+    cp->reg_A = mmu->read_memory(0xFF00 + cp->reg_C);
 };
 
 void op_F3(Mmu* mmu, Cpu* cp) { cp->pending_interrupt_disabled = true; };
 
-void op_F5(Mmu* mmu, Cpu* cp) { cp->push16(A); };
+void op_F5(Mmu* mmu, Cpu* cp) { cp->push16(&cp->reg_AF); };
 
 void op_F6(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] = cp->or8(cp->registers[A], mmu->read_memory(++cp->pc));
+    cp->or8(&cp->reg_A, mmu->read_memory(++cp->pc));
 };
 
 void op_F7(Mmu* mmu, Cpu* cp) {
@@ -1281,8 +1208,8 @@ void op_F8(Mmu* mmu, Cpu* cp) {
     // https://stackoverflow.com/questions/57958631/game-boy-half-carry-flag-and-16-bit-instructions-especially-opcode-0xe8
     char n = mmu->read_memory(++cp->pc);
     word spn = cp->sp + n;
-    cp->registers[L] = spn & 0x00FF;
-    cp->registers[H] = (spn & 0xFF00) >> 8;
+    cp->reg_L = spn & 0x00FF;
+    cp->reg_H = (spn & 0xFF00) >> 8;
 
     cp->set_z_flag(0);
     cp->set_n_flag(0);
@@ -1291,18 +1218,17 @@ void op_F8(Mmu* mmu, Cpu* cp) {
 };
 
 void op_F9(Mmu* mmu, Cpu* cp) {
-    cp->sp = (cp->registers[H] << 8) | cp->registers[L];
+    cp->sp = cp->reg_HL.get();
 };
 
 void op_FA(Mmu* mmu, Cpu* cp) {
-    cp->registers[A] =
-        mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
+    cp->reg_A = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
 };
 
 void op_FB(Mmu* mmu, Cpu* cp) { cp->pending_interrupt_enabled = true; };
 
 void op_FE(Mmu* mmu, Cpu* cp) {
-    cp->cp(cp->registers[A], mmu->read_memory(++cp->pc));
+    cp->cp8(&cp->reg_A, mmu->read_memory(++cp->pc));
 };
 
 void op_FF(Mmu* mmu, Cpu* cp) {
@@ -1319,156 +1245,168 @@ void op_CB(Mmu* mmu, Cpu* cp) {
     byte bit = opcode & 0x38;
     cp->last_clock = 8;
 
+    byte *preg; 
+
+    switch (reg) {
+        case 0: preg = &cp->reg_B; break;
+        case 1: preg = &cp->reg_C; break;
+        case 2: preg = &cp->reg_D; break;
+        case 3: preg = &cp->reg_E; break;
+        case 4: preg = &cp->reg_H; break;
+        case 5: preg = &cp->reg_L; break;
+        default: preg = &cp->reg_A; break;
+    }
+
     if (opcode >= 0xC0) {
-        cp->set_r1(opcode & 0x07, opcode & 0x38);
+        if (preg) cp->set(preg, bit); else cp->set(&cp->reg_HL, bit);
     } else if (opcode < 0xC0 && opcode >= 0x80) {
-        cp->res_r1(opcode & 0x07, opcode & 0x38);
+        if (preg) cp->res(preg, bit); else cp->res(&cp->reg_HL, bit);
     } else if (opcode < 0x80 && opcode >= 0x40) {
-        cp->bit_r1(opcode & 0x07, opcode & 0x38);
+        if (preg) cp->bit(preg, bit); else cp->bit(&cp->reg_HL, bit);
     } else {
         (*optable_cb[opcode])(mmu, cp);
         cp->last_clock = cycle_table_cb[opcode];
     }
 };
 
-void op_CB_00(Mmu* mmu, Cpu* cp) { cp->rlc_r1(B); };
+void op_CB_00(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_B); };
 
-void op_CB_01(Mmu* mmu, Cpu* cp) { cp->rlc_r1(C); };
+void op_CB_01(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_C); };
 
-void op_CB_02(Mmu* mmu, Cpu* cp) { cp->rlc_r1(D); };
+void op_CB_02(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_D); };
 
-void op_CB_03(Mmu* mmu, Cpu* cp) { cp->rlc_r1(E); };
+void op_CB_03(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_E); };
 
-void op_CB_04(Mmu* mmu, Cpu* cp) { cp->rlc_r1(H); };
+void op_CB_04(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_H); };
 
-void op_CB_05(Mmu* mmu, Cpu* cp) { cp->rlc_r1(L); };
+void op_CB_05(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_L); };
 
 void op_CB_06(Mmu* mmu, Cpu* cp) {
 
 };
 
-void op_CB_07(Mmu* mmu, Cpu* cp) { cp->rlc_r1(A); };
+void op_CB_07(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_A); };
 
-void op_CB_08(Mmu* mmu, Cpu* cp) { cp->rrc_r1(B); };
+void op_CB_08(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_B); };
 
-void op_CB_09(Mmu* mmu, Cpu* cp) { cp->rrc_r1(C); };
+void op_CB_09(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_C); };
 
-void op_CB_0A(Mmu* mmu, Cpu* cp) { cp->rrc_r1(D); };
+void op_CB_0A(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_D); };
 
-void op_CB_0B(Mmu* mmu, Cpu* cp) { cp->rrc_r1(E); };
+void op_CB_0B(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_E); };
 
-void op_CB_0C(Mmu* mmu, Cpu* cp) { cp->rrc_r1(H); };
+void op_CB_0C(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_H); };
 
-void op_CB_0D(Mmu* mmu, Cpu* cp) { cp->rrc_r1(L); };
+void op_CB_0D(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_L); };
 
 void op_CB_0E(Mmu* mmu, Cpu* cp) {
 
 };
 
-void op_CB_0F(Mmu* mmu, Cpu* cp) { cp->rrc_r1(A); };
+void op_CB_0F(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_A); };
 
-void op_CB_10(Mmu* mmu, Cpu* cp) { cp->rl_r1(B); };
+void op_CB_10(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_B); };
 
-void op_CB_11(Mmu* mmu, Cpu* cp) { cp->rl_r1(C); };
+void op_CB_11(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_C); };
 
-void op_CB_12(Mmu* mmu, Cpu* cp) { cp->rl_r1(D); };
+void op_CB_12(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_D); };
 
-void op_CB_13(Mmu* mmu, Cpu* cp) { cp->rl_r1(E); };
+void op_CB_13(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_E); };
 
-void op_CB_14(Mmu* mmu, Cpu* cp) { cp->rl_r1(H); };
+void op_CB_14(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_H); };
 
-void op_CB_15(Mmu* mmu, Cpu* cp) { cp->rl_r1(L); };
+void op_CB_15(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_L); };
 
 void op_CB_16(Mmu* mmu, Cpu* cp) {
 
 };
 
-void op_CB_17(Mmu* mmu, Cpu* cp) { cp->rl_r1(A); };
+void op_CB_17(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_A); };
 
-void op_CB_18(Mmu* mmu, Cpu* cp) { cp->rr_r1(B); };
+void op_CB_18(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_B); };
 
-void op_CB_19(Mmu* mmu, Cpu* cp) { cp->rr_r1(C); };
+void op_CB_19(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_C); };
 
-void op_CB_1A(Mmu* mmu, Cpu* cp) { cp->rr_r1(D); };
+void op_CB_1A(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_D); };
 
-void op_CB_1B(Mmu* mmu, Cpu* cp) { cp->rr_r1(E); };
+void op_CB_1B(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_E); };
 
-void op_CB_1C(Mmu* mmu, Cpu* cp) { cp->rr_r1(H); };
+void op_CB_1C(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_H); };
 
-void op_CB_1D(Mmu* mmu, Cpu* cp) { cp->rr_r1(L); };
+void op_CB_1D(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_L); };
 
 void op_CB_1E(Mmu* mmu, Cpu* cp) {
 
 };
 
-void op_CB_1F(Mmu* mmu, Cpu* cp) { cp->rr_r1(A); };
+void op_CB_1F(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_A); };
 
-void op_CB_20(Mmu* mmu, Cpu* cp) { cp->sla_r1(B); };
+void op_CB_20(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_B); };
 
-void op_CB_21(Mmu* mmu, Cpu* cp) { cp->sla_r1(C); };
+void op_CB_21(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_C); };
 
-void op_CB_22(Mmu* mmu, Cpu* cp) { cp->sla_r1(D); };
+void op_CB_22(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_D); };
 
-void op_CB_23(Mmu* mmu, Cpu* cp) { cp->sla_r1(E); };
+void op_CB_23(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_E); };
 
-void op_CB_24(Mmu* mmu, Cpu* cp) { cp->sla_r1(H); };
+void op_CB_24(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_H); };
 
-void op_CB_25(Mmu* mmu, Cpu* cp) { cp->sla_r1(L); };
+void op_CB_25(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_L); };
 
 void op_CB_26(Mmu* mmu, Cpu* cp) {
 
 };
 
-void op_CB_27(Mmu* mmu, Cpu* cp) { cp->sla_r1(A); };
+void op_CB_27(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_A); };
 
-void op_CB_28(Mmu* mmu, Cpu* cp) { cp->sra_r1(B); };
+void op_CB_28(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_B); };
 
-void op_CB_29(Mmu* mmu, Cpu* cp) { cp->sra_r1(C); };
+void op_CB_29(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_C); };
 
-void op_CB_2A(Mmu* mmu, Cpu* cp) { cp->sra_r1(D); };
+void op_CB_2A(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_D); };
 
-void op_CB_2B(Mmu* mmu, Cpu* cp) { cp->sra_r1(E); };
+void op_CB_2B(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_E); };
 
-void op_CB_2C(Mmu* mmu, Cpu* cp) { cp->sra_r1(H); };
+void op_CB_2C(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_H); };
 
-void op_CB_2D(Mmu* mmu, Cpu* cp) { cp->sra_r1(L); };
+void op_CB_2D(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_L); };
 
 void op_CB_2E(Mmu* mmu, Cpu* cp) {
 
 };
 
-void op_CB_2F(Mmu* mmu, Cpu* cp) { cp->sra_r1(A); };
+void op_CB_2F(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_A); };
 
-void op_CB_30(Mmu* mmu, Cpu* cp) { cp->swap_r1(B); };
+void op_CB_30(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_B); };
 
-void op_CB_31(Mmu* mmu, Cpu* cp) { cp->swap_r1(C); };
+void op_CB_31(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_C); };
 
-void op_CB_32(Mmu* mmu, Cpu* cp) { cp->swap_r1(D); };
+void op_CB_32(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_D); };
 
-void op_CB_33(Mmu* mmu, Cpu* cp) { cp->swap_r1(E); };
+void op_CB_33(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_E); };
 
-void op_CB_34(Mmu* mmu, Cpu* cp) { cp->swap_r1(H); };
+void op_CB_34(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_H); };
 
-void op_CB_35(Mmu* mmu, Cpu* cp) { cp->swap_r1(L); };
+void op_CB_35(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_L); };
 
-void op_CB_36(Mmu* mmu, Cpu* cp) { cp->swap_r16(H); };
+void op_CB_36(Mmu* mmu, Cpu* cp) { cp->swap16(&cp->reg_HL); };
 
-void op_CB_37(Mmu* mmu, Cpu* cp) { cp->swap_r1(A); };
+void op_CB_37(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_A); };
 
-void op_CB_38(Mmu* mmu, Cpu* cp) { cp->srl_r1(B); };
+void op_CB_38(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_B); };
 
-void op_CB_39(Mmu* mmu, Cpu* cp) { cp->srl_r1(C); };
+void op_CB_39(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_C); };
 
-void op_CB_3A(Mmu* mmu, Cpu* cp) { cp->srl_r1(D); };
+void op_CB_3A(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_D); };
 
-void op_CB_3B(Mmu* mmu, Cpu* cp) { cp->srl_r1(E); };
+void op_CB_3B(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_E); };
 
-void op_CB_3C(Mmu* mmu, Cpu* cp) { cp->srl_r1(H); };
+void op_CB_3C(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_H); };
 
-void op_CB_3D(Mmu* mmu, Cpu* cp) { cp->srl_r1(L); };
+void op_CB_3D(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_L); };
 
 void op_CB_3E(Mmu* mmu, Cpu* cp) {
 
 };
 
-void op_CB_3F(Mmu* mmu, Cpu* cp) { cp->srl_r1(A); };
+void op_CB_3F(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_A); };

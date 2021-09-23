@@ -10,13 +10,12 @@ Cpu::Cpu(Mmu* mmu) {
     pending_interrupt_disabled = false;
     pending_interrupt_enabled = false;
     
-    registers[A] = 0x01;
-    registers[F] = 0xB0;
-    registers[C] = 0x13;
-    registers[E] = 0xD8;
-    registers[H] = 0x01;
-    registers[L] = 0x4D;   
-
+    reg_A = 0x01;
+    reg_F = 0xB0;
+    reg_C = 0x13;
+    reg_E = 0xD8;
+    reg_H = 0x01;
+    reg_L = 0x4D;
 };
 
 void Cpu::emulate_cycle() {
@@ -26,6 +25,7 @@ void Cpu::emulate_cycle() {
 
     // decode and execute op
     execute_opcode();
+    total_clock += last_clock;      // ig total_clock is not used but...
 
     pc++;
 
@@ -44,71 +44,48 @@ void Cpu::emulate_cycle() {
 };
 
 void Cpu::execute_opcode() {
-    // debug();
+    //debug();
 
     (*optable[opcode])(mmu, this);
 };
 
 void Cpu::debug() {
     printf("pc: %04x  opcode: %02x  sp: %04x\n", pc, opcode, sp);
-    printf("a: %02x  f: %02x\n", registers[A], registers[F]);
-    printf("b: %02x  c: %02x\n", registers[B], registers[C]);
-    printf("d: %02x  e: %02x\n", registers[D], registers[E]);
-    printf("h: %02x  l: %02x\n", registers[H], registers[L]);
+    printf("a: %02x  f: %02x\n", reg_A, reg_F);
+    printf("b: %02x  c: %02x\n", reg_B, reg_C);
+    printf("d: %02x  e: %02x\n", reg_D, reg_E);
+    printf("h: %02x  l: %02x\n", reg_H, reg_L);
     printf("\n");
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void Cpu::subc_a_pc() {
-    // TODO: this is not used??
-    registers[A] = sub8(registers[A], mmu->address[pc] + get_c_flag());
+
+void Cpu::inc16(PairRegister *reg_16) {
+    (*reg_16)++;
 };
 
-void Cpu::add_hl_r16(byte r16) {
-    word res = add16((registers[H] << 8) | registers[L],
-                     (registers[r16] << 8) | registers[r16 + 1]);
-
-    registers[H] = res & 0xFF;
-    registers[L] = (res & 0xFF00) >> 8;
+void Cpu::dec16(PairRegister *reg_16) {
+    (*reg_16)--;
 };
 
-void Cpu::add_hl_sp() {
-    word res = add16((registers[H] << 8) | registers[L], sp);
+void Cpu::swap8(byte *reg_8) {
+    *reg_8 = (*reg_8 << 4) | (*reg_8 >> 4);
 
-    registers[H] = res & 0xFF;
-    registers[L] = (res & 0xFF00) >> 8;
-};
-
-void Cpu::inc_r16(byte r16) {
-    word res = ((registers[r16] << 8) | registers[r16 + 1]) + 1;
-    registers[r16] = res & 0xFF;
-    registers[r16 + 1] = (res & 0xFF00) >> 8;
-};
-
-void Cpu::dec_r16(byte r16) {
-    word res = ((registers[r16] << 8) | registers[r16 + 1]) - 1;
-    registers[r16] = res & 0xFF;
-    registers[r16 + 1] = (res & 0xFF00) >> 8;
-};
-
-void Cpu::swap_r1(byte r1) {
-    registers[r1] = (registers[r1] << 4) | (registers[r1] >> 4);
-
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
 };
 
-void Cpu::swap_r16(byte r16) {
-    byte temp = registers[r16];
+void Cpu::swap16(PairRegister *reg_16) {
+    byte temp = reg_16->low();
 
-    registers[r16] = registers[r16 + 1];
-    registers[r16 + 1] = temp;
+    reg_16->low(reg_16->high());
+    reg_16->high(temp);
 
-    set_z_flag(registers[r16] == 0 && registers[r16 + 1] == 0);
+    set_z_flag(reg_16->get() == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
@@ -116,246 +93,209 @@ void Cpu::swap_r16(byte r16) {
 
 // for rl vs rlc : http://jgmalcolm.com/z80/advanced/shif
 
-void Cpu::rlc_r1(byte r1) {
-    // rotates r1 to the left with bit 7 being moved to bit 0 and
+void Cpu::rlc8(byte *reg_8) {
+    // rotates reg_8 to the left with bit 7 being moved to bit 0 and
     // also stored in the carry
 
-    byte carry = (registers[r1] & (1 << 7)) >> 7;
-    registers[r1] = (registers[r1] << 1) | carry;
+    byte carry = (*reg_8 & (1 << 7)) >> 7;
+    *reg_8 = (*reg_8 << 1) | carry;
 
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(carry);
 };
 
-void Cpu::rl_r1(byte r1) {
-    // rotates r1 to the left with the carry's value put into bit
+void Cpu::rl8(byte *reg_8) {
+    // rotates reg_8 to the left with the carry's value put into bit
     // 0 and bit 7 is put into the carry
 
     byte carry = get_c_flag();
 
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag(registers[r1] & (1 << 7));
+    set_c_flag(*reg_8 & (1 << 7));
 
-    registers[r1] = (registers[r1] << 1) | carry;
+    *reg_8 = (*reg_8 << 1) | carry;
 
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
 };
 
-void Cpu::rrc_r1(byte r1) {
+void Cpu::rrc8(byte *reg_8) {
     set_h_flag(0);
     set_n_flag(0);
-    set_c_flag(registers[r1] & 0x01);
+    set_c_flag(*reg_8 & 0x01);
 
     byte carry = get_c_flag();
-    registers[r1] = (registers[r1] >> 1) | (carry << 7);
+    *reg_8 = (*reg_8 >> 1) | (carry << 7);
 
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
 };
 
-void Cpu::rr_r1(byte r1) {
+void Cpu::rr8(byte *reg_8) {
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag(registers[r1] & 0x01);
+    set_c_flag(*reg_8 & 0x01);
 
     byte carry = get_c_flag();
-    registers[r1] = (registers[r1] >> 1) | (carry << 7);
+    *reg_8 = (*reg_8 >> 1) | (carry << 7);
 
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
 };
 
-void Cpu::sla_r1(byte r1) {
+void Cpu::sla8(byte *reg_8) {
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag((registers[r1] & 0x80) >> 7);
+    set_c_flag((*reg_8 & 0x80) >> 7);
 
-    registers[r1] <<= 1;
+    *reg_8 <<= 1;
 
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
 };
 
-void Cpu::sra_r1(byte r1) {
+void Cpu::sra8(byte *reg_8) {
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag(registers[r1] & 0x01);
+    set_c_flag(*reg_8 & 0x01);
 
-    byte last_bit = registers[r1] & 0x80;
-    registers[r1] >>= 1;
-    registers[r1] |= last_bit;
+    byte last_bit = *reg_8 & 0x80;
+    *reg_8 >>= 1;
+    *reg_8 |= last_bit;
 
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
 };
 
-void Cpu::srl_r1(byte r1) {
+void Cpu::srl8(byte *reg_8) {
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag(registers[r1] & 0x01);
+    set_c_flag(*reg_8 & 0x01);
 
-    registers[r1] >>= 1;
+    *reg_8 >>= 1;
 
-    set_z_flag(registers[r1] == 0);
+    set_z_flag(*reg_8 == 0);
 };
 
-void Cpu::bit_r1(byte r1, byte bit) {
-    bool n = true;
-    if (r1 == 6) {
-        last_clock = 16;
-        n = (mmu->read_memory((registers[H] << 8) | registers[L])) & (1 << bit);
-    } else if (r1 == 7) {
-        n = registers[A] & (1 << bit);
-    } else {
-        n = registers[r1 + 2] & (1 << bit);
-    }
-
-    set_z_flag(!n);
+void Cpu::bit(byte *reg_8, byte bit) {
+    
+    set_z_flag(!(*reg_8 & (1 << bit)));
     set_n_flag(0);
     set_h_flag(1);
 };
 
-void Cpu::set_r1(byte r1, byte bit) {
-    if (r1 == 6) {
-        last_clock = 16;
-        word hl = (registers[H] << 8) | registers[L];
-        mmu->write_memory(hl, mmu->read_memory(hl) | (1 << bit));
-    } else if (r1 == 7) {
-        registers[A] |= (1 << bit);
-    } else {
-        registers[r1 + 2] |= (1 << bit);
-    }
+void Cpu::bit(PairRegister *reg_16, byte bit) {
+
+    last_clock = 16;        // the clock for this operation is different
+    set_z_flag(!(mmu->read_memory(reg_16->get()) & (1 << bit)));
+    set_n_flag(0);
+    set_h_flag(1);
 };
 
-void Cpu::res_r1(byte r1, byte bit) {
-    if (r1 == 6) {
-        last_clock = 16;
-        word hl = (registers[H] << 8) | registers[L];
-        mmu->write_memory(hl, mmu->read_memory(hl) & ~(1 << bit));
-    } else if (r1 == 7) {
-        registers[A] &= ~(1 << bit);
-    } else {
-        registers[r1 + 2] &= ~(1 << bit);
-    }
+void Cpu::set(byte *reg_8, byte bit) {
+    *reg_8 |= (1 << bit);
 };
 
-void Cpu::call_cc_nn(byte cc) {
-    word nn = mmu->read_memory(++pc) | (mmu->read_memory(++pc) << 8);
-
-    if (cc == 0 && !get_z_flag()) {
-        store_pc_stack();
-        pc = nn;
-    } else if (cc == 1 && get_z_flag()) {
-        store_pc_stack();
-        pc = nn;
-    } else if (cc == 2 && !get_c_flag()) {
-        store_pc_stack();
-        pc = nn;
-    } else if (cc == 3 && get_c_flag()) {
-        store_pc_stack();
-        pc = nn;
-    }
+void Cpu::set(PairRegister *reg_16, byte bit) {
+    last_clock = 16;
+    mmu->write_memory(reg_16->get(), mmu->read_memory(reg_16->get()) | (1 << bit));
 };
 
-void Cpu::ret_cc(byte cc) {
-    if (cc == 0 && !get_z_flag()) {
-        ret();
-    } else if (cc == 1 && get_z_flag()) {
-        ret();
-    } else if (cc == 2 && !get_c_flag()) {
-        ret();
-    } else if (cc == 3 && get_c_flag()) {
-        ret();
-    }
+void Cpu::res(byte *reg_8, byte bit) {
+    *reg_8 &= ~(1 << bit);
 };
 
-byte Cpu::add8(byte op1, byte op2) {
-    byte res = op1 + op2;
+void Cpu::res(PairRegister *reg_16, byte bit) {
+    last_clock = 16;
+    mmu->write_memory(reg_16->get(), mmu->read_memory(reg_16->get()) & ~(1 << bit));
+};
+
+void Cpu::add8(byte *op1, byte op2) {
+    byte res = *op1 + op2;
 
     set_z_flag(res == 0);
     set_n_flag(0);
-    set_h_flag((op1 & 0x0F) + (op2 & 0x0F) > 0x0F);
-    set_c_flag((op1 + op2) > 0xFF);
+    set_h_flag((*op1 & 0x0F) + (op2 & 0x0F) > 0x0F);
+    set_c_flag((*op1 + op2) > 0xFF);
 
-    return res;
+    *op1 = res;
 };
 
-byte Cpu::sub8(byte op1, byte op2) {
-    byte res = op1 - op2;
+void Cpu::sub8(byte *op1, byte op2) {
+    byte res = *op1 - op2;
 
     set_z_flag(res == 0);
     set_n_flag(1);
-    set_h_flag((op1 & 0x0F) < (op2 & 0x0F));
-    set_c_flag(op1 < op2);
+    set_h_flag((*op1 & 0x0F) < (op2 & 0x0F));
+    set_c_flag(*op1 < op2);
 
-    return res;
+    *op1 = res;
 };
 
-byte Cpu::and8(byte op1, byte op2) {
-    byte res = op1 & op2;
+void Cpu::and8(byte *op1, byte op2) {
+    byte res = *op1 & op2;
 
     set_z_flag(res == 0);
     set_n_flag(0);
     set_h_flag(1);
     set_c_flag(0);
 
-    return res;
+    *op1 = res;
 };
 
-byte Cpu::or8(byte op1, byte op2) {
-    byte res = op1 | op2;
+void Cpu::or8(byte *op1, byte op2) {
+    byte res = *op1 | op2;
 
     set_z_flag(res == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
 
-    return res;
+    *op1 = res;
 };
 
-byte Cpu::xor8(byte op1, byte op2) {
-    byte res = op1 ^ op2;
+void Cpu::xor8(byte *op1, byte op2) {
+    byte res = *op1 ^ op2;
 
     set_z_flag(res == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
 
-    return res;
+    *op1 = res;
 };
 
-void Cpu::cp(byte op1, byte op2) {
-    set_z_flag(op1 == op2);
+void Cpu::cp8(byte *op1, byte op2) {
+    set_z_flag(*op1 == op2);
     set_n_flag(1);
-    set_h_flag((op1 & 0xF) < (op2 & 0xF));
-    set_c_flag(op1 < op2);
+    set_h_flag((*op1 & 0xF) < (op2 & 0xF));
+    set_c_flag(*op1 < op2);
 };
 
-void Cpu::inc8(byte op1) {
-    byte res = registers[op1] + 1;
+void Cpu::inc8(byte *op1) {
+    byte res = *op1 + 1;
 
     set_z_flag(res == 0);
     set_n_flag(0);
-    set_h_flag((registers[op1] & 0x0F) == 0x0F);
+    set_h_flag((*op1 & 0x0F) == 0x0F);
 
-    registers[op1] = res;
+    *op1 = res;
 };
 
-void Cpu::dec8(byte op1) {
-    byte res = registers[op1] - 1;
+void Cpu::dec8(byte *op1) {
+    byte res = *op1 - 1;
 
     set_z_flag(res == 0);
     set_n_flag(1);
     set_h_flag((res & 0x0F) == 0x0F);
 
-    registers[op1] = res;
+    *op1 = res;
 };
 
-word Cpu::add16(word op1, word op2) {
+void Cpu::add16(PairRegister *op1, word op2) {
     set_n_flag(0);
-    set_h_flag((0x0FFF & op1) + (0X0FFF & op2) > 0x0FFF);
-    set_c_flag((0xFFFF - op1) < op2);
+    set_h_flag((0x0FFF & op1->get()) + (0X0FFF & op2) > 0x0FFF);
+    set_c_flag((0xFFFF - op1->get()) < op2);
 
-    return op1 + op2;
+    op1->set(op1->get() + op2);
 };
 
 void Cpu::ret() {
@@ -367,36 +307,36 @@ void Cpu::store_pc_stack() {
     mmu->write_memory(--sp, ((pc + 1) & 0xFF));
 };
 
-void Cpu::push16(byte r1) {
-    mmu->write_memory(--sp, registers[r1]);
-    mmu->write_memory(--sp, registers[r1 + 1]);
+void Cpu::push16(PairRegister *reg_16) {
+    mmu->write_memory(--sp, reg_16->high());
+    mmu->write_memory(--sp, reg_16->low());
 };
 
-void Cpu::pop16(byte r1) {
-    registers[r1 + 1] = mmu->read_memory(sp++);
-    registers[r1] = mmu->read_memory(sp++);
+void Cpu::pop16(PairRegister *reg_16) {
+    reg_16->low(mmu->read_memory(sp++));
+    reg_16->high(mmu->read_memory(sp++));
 };
 
 void Cpu::set_z_flag(bool value) {
-    registers[F] = (registers[F] & ~(1 << 7)) | (value << 7);
+    reg_F = (reg_F & ~(1 << 7)) | (value << 7);
 };
 
 void Cpu::set_n_flag(bool value) {
-    registers[F] = (registers[F] & ~(1 << 6)) | (value << 6);
+    reg_F = (reg_F & ~(1 << 6)) | (value << 6);
 };
 
 void Cpu::set_h_flag(bool value) {
-    registers[F] = (registers[F] & ~(1 << 5)) | (value << 5);
+    reg_F = (reg_F & ~(1 << 5)) | (value << 5);
 };
 
 void Cpu::set_c_flag(bool value) {
-    registers[F] = (registers[F] & ~(1 << 4)) | (value << 4);
+    reg_F = (reg_F & ~(1 << 4)) | (value << 4);
 };
 
-bool Cpu::get_z_flag() { return registers[F] & 0x80; };
+bool Cpu::get_z_flag() { return reg_F & 0x80; };
 
-bool Cpu::get_n_flag() { return registers[F] & 0x40; };
+bool Cpu::get_n_flag() { return reg_F & 0x40; };
 
-bool Cpu::get_h_flag() { return registers[F] & 0x20; };
+bool Cpu::get_h_flag() { return reg_F & 0x20; };
 
-bool Cpu::get_c_flag() { return registers[F] & 0x10; };
+bool Cpu::get_c_flag() { return reg_F & 0x10; };

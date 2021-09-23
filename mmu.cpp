@@ -89,8 +89,7 @@ Mmu::Mmu(Cartridge *c) {
 byte Mmu::read_memory(word addr) {
     // reading from rom bank
     if (addr >= 0x4000 && addr <= 0x7FFF) {
-        //return mbc->read(addr);
-        return address[addr];
+        return mbc->read(addr);
     }
 
     // reading from RAM Bank
