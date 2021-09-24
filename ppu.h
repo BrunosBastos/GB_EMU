@@ -34,7 +34,9 @@ class Ppu {
 
         int clock_count;
 
-        int buffer[PPU_BUFFER_WIDTH][PPU_BUFFER_HEIGHT];
+        int bg_buffer[PPU_BUFFER_WIDTH][PPU_BUFFER_HEIGHT];
+        int window_buffer[PPU_BUFFER_WIDTH][PPU_BUFFER_HEIGHT];
+        int sprites_buffer[PPU_BUFFER_WIDTH][PPU_BUFFER_HEIGHT];
 
         byte *pallets[3];
 
@@ -72,6 +74,7 @@ class Ppu {
         bool get_obj_display_enable();
         bool get_bg_display();
 
+        int get_color(byte color);
 
         // ldc display enable(0=OFF, 1=ON)
         // Window Tile Map Display Select(0=9800-9BFF, 1=9C00-9FFF)

@@ -391,8 +391,8 @@ void op_10(Mmu* mmu, Cpu* cp) {
 };
 
 void op_11(Mmu* mmu, Cpu* cp) {
-    cp->reg_D = mmu->read_memory(++cp->pc);
     cp->reg_E = mmu->read_memory(++cp->pc);
+    cp->reg_D = mmu->read_memory(++cp->pc);
 };
 
 void op_12(Mmu* mmu, Cpu* cp) {

@@ -79,7 +79,7 @@ void Ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, w
     int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  // combine 2 bytes
     int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));
 
-    buffer[pixel][curr_line] = color;
+    bg_buffer[pixel][curr_line] = get_color(color);
 };
 
 void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
@@ -99,7 +99,7 @@ void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
     int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));   // combine 2 bytes
     int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));
 
-    buffer[pixel][curr_line] = color;
+    window_buffer[pixel][curr_line] = get_color(color);
 };
 
 void Ppu::render_tiles() {
@@ -163,13 +163,18 @@ void Ppu::render_sprites() {
                 byte p = attributes & (1 << 4) ? 2 : 1;     // choose the pallet
                 int color = (*pallets[p] & (1 << (2 * color_num + 1))) << 1 | (*pallets[p] & (1 << (2 * color_num)));
 
-                // white is transparent
-                if (color == WHITE) continue;
-
-                buffer[pixel][curr_line] = color;
+                sprites_buffer[pixel][curr_line] = get_color(color);
             }
         }
     }
+};
+
+int Ppu::get_color(byte color) {
+
+    if (color == WHITE) return 0xFFFFFFFF;
+    if (color == L_GRAY) return 0xc6c6c6FF;
+    if (color == D_GRAY) return 0x7f7f7fFF;
+    if (color == BLACK) return 0x00000000;
 };
 
 void Ppu::set_mode(int mode) { *lcd_status = ((*lcd_status & 252) | mode); };

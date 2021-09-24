@@ -8,41 +8,61 @@
 #include "emulator.h"
 
 SDL_Renderer *renderer;
-
+SDL_Texture *bg_texture;
+SDL_Texture *window_texture;
+SDL_Texture *sprites_texture;
 
 void sdl_init() {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window =
         SDL_CreateWindow("test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                         800, 600, SDL_WINDOW_SHOWN);
+                         500, 500, SDL_WINDOW_SHOWN);
 
     renderer = SDL_CreateRenderer(window, -1, 0);
+    bg_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, PPU_BUFFER_WIDTH, PPU_BUFFER_HEIGHT);
+    window_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, PPU_BUFFER_WIDTH, PPU_BUFFER_HEIGHT);
+    sprites_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, PPU_BUFFER_WIDTH, PPU_BUFFER_HEIGHT);
+    
+    SDL_SetTextureBlendMode(window_texture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureBlendMode(sprites_texture, SDL_BLENDMODE_BLEND);
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderPresent(renderer);
 };
 
-void change_color(int color) {
-    if (color == WHITE) {
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    } else if (color == L_GRAY) {
-        SDL_SetRenderDrawColor(renderer, 0xCC, 0xCC, 0xCC, 255);
-    } else if (color == D_GRAY) {
-        SDL_SetRenderDrawColor(renderer, 0x77, 0x77, 0x77, 255);
-    } else if (color == BLACK) {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    }
+void draw_sprites(Ppu *p) {
+    SDL_UpdateTexture(sprites_texture, nullptr, p->sprites_buffer, PPU_BUFFER_WIDTH * sizeof(int));
+    SDL_RenderCopy(renderer, sprites_texture, nullptr, nullptr);
+    
+};
+
+void draw_bg(Ppu *p) {
+    SDL_UpdateTexture(bg_texture, nullptr, p->bg_buffer, PPU_BUFFER_WIDTH * sizeof(int));
+    SDL_RenderCopy(renderer, bg_texture, nullptr, nullptr);
+    
+};
+
+void draw_window(Ppu *p) {
+    
+    SDL_UpdateTexture(window_texture, nullptr, p->window_buffer, PPU_BUFFER_WIDTH * sizeof(int));
+    SDL_RenderCopy(renderer, window_texture, nullptr, nullptr);
+   
 };
 
 void update_screen(Ppu *p) {
-    for (int x = 0; x < PPU_BUFFER_WIDTH; x++) {
-        for (int y = 0; y < PPU_BUFFER_HEIGHT; y++) {
-            change_color(p->buffer[x][y]);
-            SDL_RenderDrawPoint(renderer, x, y);
-        }
-    }
+   
+    SDL_RenderClear(renderer);
+
+    draw_bg(p);
+    draw_window(p);
+    draw_sprites(p);
+    
+    SDL_RenderPresent(renderer);
 };
 
 void handle_input(Emulator* emu, SDL_Event event) {
     if (event.type == SDL_KEYDOWN) {
-        printf("Input \n");
         int key = -1;
         switch (event.key.keysym.sym) {
             case SDLK_a:
@@ -120,31 +140,35 @@ int main() {
    
     bool running = true;
     while (running) {
+        int startMs = SDL_GetTicks();
+
         int framerate = 60;
         float cycles_per_frame = emu->clock_speed / framerate;
 		float time_between_frames = 1000 / framerate;
         int current_cycle = 0;
 
-        int startMs = SDL_GetTicks();
-        //update_screen(emu->ppu);
 
-        // while (SDL_PollEvent(&event)) { 
-        //     handle_input(emu, event);
-        //     if (event.type == SDL_QUIT) {
-        //         running = false;
-        //         break;
-        //     }
-        // }
-
-        while(current_cycle < cycles_per_frame) {
-            emu->run();        
+        while (SDL_PollEvent(&event)) { 
+            handle_input(emu, event);
+            if (event.type == SDL_QUIT) {
+                running = false;
+                exit(0);
+            }
         }
 
-        current_cycle = 0;
+        while (current_cycle < cycles_per_frame && running) {
+            emu->run();
+            current_cycle += emu->cpu->last_clock;        
+        }
+
+        update_screen(emu->ppu);
 
         int endMs = SDL_GetTicks();
-        SDL_Delay(time_between_frames - (endMs - startMs));
-        printf("fps=%d\n", (int)(1000/(SDL_GetTicks()-startMs)));
+        printf("fps=%d\n", time_between_frames - endMs + startMs);
+        int delay = time_between_frames - (endMs - startMs);
+        if(delay > 0) {
+            SDL_Delay(delay);
+        }
     }
     return 0;
 };

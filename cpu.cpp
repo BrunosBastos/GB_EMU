@@ -44,17 +44,20 @@ void Cpu::emulate_cycle() {
 };
 
 void Cpu::execute_opcode() {
-    //debug();
+    debug();
 
     (*optable[opcode])(mmu, this);
 };
 
 void Cpu::debug() {
     printf("pc: %04x  opcode: %02x  sp: %04x\n", pc, opcode, sp);
+    printf("last_clock: %02i\n", last_clock);
     printf("a: %02x  f: %02x\n", reg_A, reg_F);
     printf("b: %02x  c: %02x\n", reg_B, reg_C);
     printf("d: %02x  e: %02x\n", reg_D, reg_E);
     printf("h: %02x  l: %02x\n", reg_H, reg_L);
+    printf("LY: %02i\n", mmu->LY.get());
+    printf("LCDC: %02x\n", mmu->LCDC.get());
     printf("\n");
 };
 
@@ -264,6 +267,7 @@ void Cpu::xor8(byte *op1, byte op2) {
 };
 
 void Cpu::cp8(byte *op1, byte op2) {
+    printf("cp :: %i %i\n", *op1, op2);
     set_z_flag(*op1 == op2);
     set_n_flag(1);
     set_h_flag((*op1 & 0xF) < (op2 & 0xF));
