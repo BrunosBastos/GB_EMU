@@ -44,6 +44,15 @@ void Emulator::service_interrupt(int id) {
     interrupt_master = false;
     mmu->write_memory(mmu->IF.address(), mmu->read_memory(mmu->IF.address()) & ~(1 << id));
 
+
+    /* 
+    store_pc_stack is made so that it increases the pc for you,
+    however, in this case, the pc was already incremented in the cpu
+    so in order for the return of the interrupt to be correct
+    it needs to be decrease here
+    */
+
+    cpu->pc--;             
     cpu->store_pc_stack();
 
     switch (id) {
@@ -105,11 +114,10 @@ void Emulator::update_graphics() {
     }
  
     clock_count -= cpu->last_clock;
+    printf("clock_count: %03i\n", clock_count);
 
     if (clock_count <= 0) {
         byte curr_line = ++mmu->LY;
-        printf("curr_line : %d\n", curr_line);
-
         clock_count = 456;
 
         if (curr_line == 144) {
@@ -119,9 +127,6 @@ void Emulator::update_graphics() {
             mmu->LY.set(0);
         } else if (curr_line < 144) {
             ppu->render_line();
-        }
-        else {
-            printf(";"); 
         }
     }
 };
