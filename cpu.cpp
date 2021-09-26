@@ -25,7 +25,8 @@ void Cpu::emulate_cycle() {
     opcode = mmu->read_memory(pc);
     last_clock = cycle_table[opcode];
 
-    if (pc == 0x029a) {
+    
+    if (pc == 0x2a00) {
         exit(1);
     }
 
@@ -65,9 +66,6 @@ void Cpu::debug() {
     printf("LY: %02i\n", mmu->LY.get());
     printf("LCDC: %02x\n", mmu->LCDC.get());
     printf("STAT: %02x\n", mmu->STAT.get());
-    if (mmu->LCDC.get() != 0x91) {
-        printf("exit\n"); exit(1);
-    }
     printf("\n");
 };
 

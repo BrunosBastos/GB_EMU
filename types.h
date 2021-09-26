@@ -36,10 +36,10 @@ class PairRegister {
 		void set(byte hi, byte lo);
 		word get();
 
-		byte operator ++ ();
-		byte operator -- ();
-		byte operator ++ (int);
-		byte operator -- (int);
+		word operator ++ ();
+		word operator -- ();
+		word operator ++ (int);
+		word operator -- (int);
 };
 
 

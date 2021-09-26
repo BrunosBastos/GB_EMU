@@ -1222,7 +1222,7 @@ void op_F9(Mmu* mmu, Cpu* cp) {
 };
 
 void op_FA(Mmu* mmu, Cpu* cp) {
-    cp->reg_A = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
+    cp->reg_A = mmu->read_memory(mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8));
 };
 
 void op_FB(Mmu* mmu, Cpu* cp) { cp->pending_interrupt_enabled = true; };

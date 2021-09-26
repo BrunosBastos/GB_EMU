@@ -52,24 +52,24 @@ void PairRegister::set(byte hi, byte lo) {
     *(this->lo) = lo;
 };
 
-byte PairRegister::operator++() {
+word PairRegister::operator++() {
     set(get() + 1);
     return get();
 };
 
-byte PairRegister::operator--() {
+word PairRegister::operator--() {
     set(get() - 1);
     return get();
 };
 
-byte PairRegister::operator++(int) {
+word PairRegister::operator++(int) {
     set(get() + 1);
     return get() - 1;
 };
 
-byte PairRegister::operator--(int) {
+word PairRegister::operator--(int) {
     set(get() - 1);
-    return get() - 1;
+    return get() + 1;
 };
 
 
@@ -121,7 +121,7 @@ byte MemoryRegister::operator++(int) {
 
 byte MemoryRegister::operator--(int) {
     set(get() - 1);
-    return get() - 1;
+    return get() + 1;
 };
 
 void MemoryRegister::operator&=(byte value) {

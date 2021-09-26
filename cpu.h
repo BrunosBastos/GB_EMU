@@ -15,6 +15,8 @@ class Cpu {
         word pc;
         word opcode;
 
+        int n_op = 0;
+
         int last_clock;         // keeps track of the number of cycles from the last opcode
         int total_clock;        // keeps track of the number of cycles since the beginning
         int time_counter;
