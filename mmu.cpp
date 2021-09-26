@@ -6,7 +6,9 @@ Mmu::Mmu(Cartridge *c) {
 
     joypad_state = 0xFF;
 
-    address = c->rom;
+    address = new byte[0xFFFF];
+    memcpy(&address, &c->rom, sizeof(c->size) );
+
 	// Assign memory controller based on cartridge specification
 	switch (address[0x0147]) {
 		case 0x01:
@@ -53,8 +55,10 @@ Mmu::Mmu(Cartridge *c) {
     address[0xFF25] = 0xF3;  // NR51
     address[0xFF26] = 0xF1;  // GB
     address[0xFF40] = 0x91;  // LCDC
+    address[0xFF41] = 0x85;  // FIXME: STAT
     address[0xFF42] = 0x00;  // SCY
     address[0xFF43] = 0x00;  // SCX
+    address[0xFF44] = 0x00;  // FIXME: LY
     address[0xFF45] = 0x00;  // LYC
     address[0xFF47] = 0xFC;  // BGP
     address[0xFF48] = 0xFF;  // OBP0

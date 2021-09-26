@@ -12,7 +12,9 @@ Cpu::Cpu(Mmu* mmu) {
     
     reg_A = 0x01;
     reg_F = 0xB0;
+    reg_B = 0x00;
     reg_C = 0x13;
+    reg_D = 0x00;
     reg_E = 0xD8;
     reg_H = 0x01;
     reg_L = 0x4D;
@@ -22,6 +24,10 @@ void Cpu::emulate_cycle() {
     // get opcode
     opcode = mmu->read_memory(pc);
     last_clock = cycle_table[opcode];
+
+    if (pc == 0x029a) {
+        exit(1);
+    }
 
     // decode and execute op
     execute_opcode();
@@ -58,6 +64,10 @@ void Cpu::debug() {
     printf("h: %02x  l: %02x\n", reg_H, reg_L);
     printf("LY: %02i\n", mmu->LY.get());
     printf("LCDC: %02x\n", mmu->LCDC.get());
+    printf("STAT: %02x\n", mmu->STAT.get());
+    if (mmu->LCDC.get() != 0x91) {
+        printf("exit\n"); exit(1);
+    }
     printf("\n");
 };
 

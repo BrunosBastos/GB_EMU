@@ -118,7 +118,7 @@ void Emulator::update_graphics() {
 
     if (clock_count <= 0) {
         byte curr_line = ++mmu->LY;
-        clock_count = 456;
+        clock_count += 456;
         
         if (curr_line == 144) {
             request_interrupt(INTERRUPT_VBLANK);
