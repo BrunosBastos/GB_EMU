@@ -6,8 +6,8 @@ Mmu::Mmu(Cartridge *c) {
 
     joypad_state = 0xFF;
 
-    address = new byte[0xFFFF];
-    memcpy(&address, &c->rom, sizeof(c->size) );
+    address = new byte[0x10000];
+    memcpy(address, c->rom, 0x8000);
 
 	// Assign memory controller based on cartridge specification
 	switch (address[0x0147]) {
