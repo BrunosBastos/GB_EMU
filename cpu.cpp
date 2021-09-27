@@ -25,11 +25,6 @@ void Cpu::emulate_cycle() {
     opcode = mmu->read_memory(pc);
     last_clock = cycle_table[opcode];
 
-    
-    if (pc == 0x2a00) {
-        exit(1);
-    }
-
     // decode and execute op
     execute_opcode();
     total_clock += last_clock;      // ig total_clock is not used but...
@@ -52,6 +47,11 @@ void Cpu::emulate_cycle() {
 
 void Cpu::execute_opcode() {
     debug();
+
+    if (pc == 0x03e9) {
+        printf("%04x\n\n\n\n", reg_HL.get());
+        exit(1);
+    }    
 
     (*optable[opcode])(mmu, this);
 };

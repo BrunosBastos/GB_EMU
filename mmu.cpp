@@ -109,15 +109,15 @@ byte Mmu::read_memory(word addr) {
 };
 
 byte Mmu::get_joypad_state() {
-    byte res = address[0xFF00] ^ 0xFF;
+    byte res = address[0xFF00] | 0xF;
 
     // standard buttons
-    if (!(res & (1 << 4))) {
-        res &= ((joypad_state >> 4) | 0xF0);
+    if (!(res & (1 << 5))) {
+        res &= (joypad_state >> 4) | 0xF0;
     }
     // directional buttons
-    else if (!(res & (1 << 5))) {
-        res &= ((joypad_state & 0xF) | 0xF0);
+    else if (!(res & (1 << 4))) {
+        res &= (joypad_state & 0xF) | 0xF0;
     }
     return res;
 };

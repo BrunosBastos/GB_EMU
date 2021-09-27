@@ -76,11 +76,12 @@ void Ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, w
     byte data2 = mmu->read_memory(tile_location + offset_y *2 + 1);
 
     int color_bit = -(offset_x - 7);
-    int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  // combine 2 bytes
-    int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));
+    int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  // combine 2 bytes to give a value 0-3
+    int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));  // pick 1 of the 4 colors in the pallet
 
     bg_buffer[pixel][curr_line] = get_color(color);
 };
+
 
 void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
     word tile_data = get_bg_wnd_tile_data_select() ? 0x8000 : 0x8800;
@@ -99,7 +100,7 @@ void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
     int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));   // combine 2 bytes
     int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));
 
-    window_buffer[pixel][curr_line] = get_color(color);
+    window_buffer[pixel][curr_line] = color_num == 0 ? 0x00000000 : get_color(color);
 };
 
 void Ppu::render_tiles() {
@@ -163,18 +164,18 @@ void Ppu::render_sprites() {
                 byte p = attributes & (1 << 4) ? 2 : 1;     // choose the pallet
                 int color = (*pallets[p] & (1 << (2 * color_num + 1))) << 1 | (*pallets[p] & (1 << (2 * color_num)));
 
-                sprites_buffer[pixel][curr_line] = get_color(color);
+                sprites_buffer[pixel][curr_line] = color_num == 0 ? 0x00000000 : get_color(color);
             }
         }
     }
 };
 
 int Ppu::get_color(byte color) {
-
+    // values in the format ABGR
     if (color == WHITE) return 0xFFFFFFFF;
-    if (color == L_GRAY) return 0xc6c6c6FF;
-    if (color == D_GRAY) return 0x7f7f7fFF;
-    if (color == BLACK) return 0x00000000;
+    if (color == L_GRAY) return 0xFF6c6c6c;
+    if (color == D_GRAY) return 0xFFf7f7f7;
+    if (color == BLACK) return 0xFF000000;
 };
 
 void Ppu::set_mode(int mode) { *lcd_status = ((*lcd_status & 252) | mode); };

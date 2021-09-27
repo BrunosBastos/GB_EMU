@@ -22,13 +22,12 @@ void sdl_init() {
     bg_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, PPU_BUFFER_WIDTH, PPU_BUFFER_HEIGHT);
     window_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, PPU_BUFFER_WIDTH, PPU_BUFFER_HEIGHT);
     sprites_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, PPU_BUFFER_WIDTH, PPU_BUFFER_HEIGHT);
-    
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureBlendMode(bg_texture, SDL_BLENDMODE_BLEND);
     SDL_SetTextureBlendMode(window_texture, SDL_BLENDMODE_BLEND);
     SDL_SetTextureBlendMode(sprites_texture, SDL_BLENDMODE_BLEND);
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderClear(renderer);
-    SDL_RenderPresent(renderer);
 };
 
 void draw_sprites(Ppu *p) {

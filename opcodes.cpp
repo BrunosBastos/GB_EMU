@@ -1165,7 +1165,7 @@ void op_E8(Mmu* mmu, Cpu* cp) {
 };
 
 void op_E9(Mmu* mmu, Cpu* cp) {
-    cp->pc = mmu->read_memory((cp->reg_HL.get())) - 1;
+    cp->pc = cp->reg_HL.get() - 1;
 };
 
 void op_EA(Mmu* mmu, Cpu* cp) {

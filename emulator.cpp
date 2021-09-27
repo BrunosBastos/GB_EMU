@@ -76,11 +76,11 @@ void Emulator::service_interrupt(int id) {
 void Emulator::key_pressed(int key) {
     bool previously_unset = false;
 
-    if (!(joypad_state & (1 << key))) {
+    if (!(mmu->joypad_state & (1 << key))) {
         previously_unset = true;
     }
-
-    joypad_state &= ~(1 << key);
+    
+    mmu->joypad_state &= ~(1 << key);
 
     byte res = mmu->read_memory(0xFF00);
     bool req_interrupt = false;
@@ -100,7 +100,7 @@ void Emulator::key_pressed(int key) {
 };
 
 void Emulator::key_released(int key) {
-    joypad_state |= (1 << key);
+    mmu->joypad_state |= (1 << key);
 };
 
 
