@@ -31,7 +31,6 @@ class Emulator {
 
 		// -------- JOYPAD ------- //
 		// int get_key_id(Key key);
-		int joypad_state;
 
 		// -------- SAVESTATES ------- //
 		// void save_state(int id);

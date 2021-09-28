@@ -7,6 +7,10 @@
 #include "ppu.h"
 #include "emulator.h"
 
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+
 SDL_Renderer *renderer;
 SDL_Texture *bg_texture;
 SDL_Texture *window_texture;
@@ -37,9 +41,19 @@ void draw_sprites(Ppu *p) {
 };
 
 void draw_bg(Ppu *p) {
+
+    std::ofstream myfile;
+    myfile.open("example.txt");
+    for(int i=0; i < PPU_BUFFER_WIDTH; i++) {
+        for(int j=0; j < PPU_BUFFER_HEIGHT; j++) {
+            myfile << std::setw(8) << std::hex << p->bg_buffer[i + j*PPU_BUFFER_WIDTH] << ' ';
+        }
+        myfile << std::endl;
+    }
+    myfile.close();
+
     SDL_UpdateTexture(bg_texture, nullptr, p->bg_buffer, PPU_BUFFER_WIDTH * sizeof(int));
     SDL_RenderCopy(renderer, bg_texture, nullptr, nullptr);
-    
 };
 
 void draw_window(Ppu *p) {
@@ -54,8 +68,8 @@ void update_screen(Ppu *p) {
     SDL_RenderClear(renderer);
 
     draw_bg(p);
-    draw_window(p);
-    draw_sprites(p);
+    //draw_window(p);
+    //draw_sprites(p);
     
     SDL_RenderPresent(renderer);
 };

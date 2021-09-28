@@ -34,9 +34,9 @@ class Ppu {
 
         int clock_count;
 
-        int bg_buffer[PPU_BUFFER_WIDTH][PPU_BUFFER_HEIGHT];
-        int window_buffer[PPU_BUFFER_WIDTH][PPU_BUFFER_HEIGHT];
-        int sprites_buffer[PPU_BUFFER_WIDTH][PPU_BUFFER_HEIGHT];
+        int bg_buffer[PPU_BUFFER_WIDTH * PPU_BUFFER_HEIGHT];
+        int window_buffer[PPU_BUFFER_WIDTH * PPU_BUFFER_HEIGHT];
+        int sprites_buffer[PPU_BUFFER_WIDTH * PPU_BUFFER_HEIGHT];
 
         byte *pallets[3];
 

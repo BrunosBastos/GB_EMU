@@ -47,11 +47,14 @@ void Cpu::emulate_cycle() {
 
 void Cpu::execute_opcode() {
     debug();
+    
+    if(pc == 0x040){
+        n_op++;
+        //exit(1);
+        if(n_op == 8)
+            exit(1);
 
-    if (pc == 0x03e9) {
-        printf("%04x\n\n\n\n", reg_HL.get());
-        exit(1);
-    }    
+    }
 
     (*optable[opcode])(mmu, this);
 };

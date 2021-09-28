@@ -1144,7 +1144,7 @@ void op_E2(Mmu* mmu, Cpu* cp) {
 void op_E5(Mmu* mmu, Cpu* cp) { cp->push16(&cp->reg_HL); };
 
 void op_E6(Mmu* mmu, Cpu* cp) {
-    cp->and8(&cp->reg_A, ++cp->pc);
+    cp->and8(&cp->reg_A, mmu->read_memory(++cp->pc));
 };
 
 void op_E7(Mmu* mmu, Cpu* cp) {

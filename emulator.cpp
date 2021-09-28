@@ -12,6 +12,10 @@ Emulator::Emulator(char *filename) {
 void Emulator::run() {
     cpu->emulate_cycle();
     update_graphics();
+    if(cpu->total_clock > 2*70224) {
+        printf("LY: %04x\n\n\n\n", mmu->LY.get());
+        //exit(1);
+    }
     execute_interrupts();
 
 };
@@ -136,7 +140,6 @@ void Emulator::set_lcd_status() {
         // set the mode to 1 during lcd disabled and reset scanline
         clock_count = 456;
         mmu->LY.set(0);
-        mmu->STAT &= 252;
         ppu->set_mode(1);
         return;
     }
