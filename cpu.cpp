@@ -48,27 +48,49 @@ void Cpu::emulate_cycle() {
 void Cpu::execute_opcode() {
     debug();
     
-    if(pc == 0x29a){
-        n_op++;
-        exit(1);
-        if(n_op == 8)
-            exit(1);
-
-    }
-
     (*optable[opcode])(mmu, this);
 };
 
+
 void Cpu::debug() {
-    printf("pc: %04x  opcode: %02x  sp: %04x\n", pc, opcode, sp);
-    printf("last_clock: %02i\n", last_clock);
-    printf("a: %02x  f: %02x\n", reg_A, reg_F);
-    printf("b: %02x  c: %02x\n", reg_B, reg_C);
-    printf("d: %02x  e: %02x\n", reg_D, reg_E);
-    printf("h: %02x  l: %02x\n", reg_H, reg_L);
-    printf("LY: %02i\n", mmu->LY.get());
-    printf("LCDC: %02x\n", mmu->LCDC.get());
-    printf("STAT: %02x\n", mmu->STAT.get());
+
+    if (pc == 0x40) {
+        //debug_tile_addr();
+        //debug_map_addr();
+    }
+    
+
+    FILE *fp;
+    fp = fopen("debug.txt", "a+");
+
+    fprintf(fp, "\npc: %04x\n", pc);
+    fprintf(fp, "\topcode: %02x  last_clock: %2i\n", opcode, last_clock);
+    fprintf(fp, "\taf: %02x%02x    lcdc: %02x\n", reg_A, reg_F, mmu->LCDC.get());
+    fprintf(fp, "\tbc: %02x%02x    stat: %02x\n", reg_B, reg_C, mmu->STAT.get());
+    fprintf(fp, "\tde: %02x%02x    ly:   %02x  (%3i)\n", reg_D, reg_E, mmu->LY.get(), mmu->LY.get());
+    fprintf(fp, "\thl: %02x%02x    ie:   %02x\n", reg_H, reg_L,  mmu->IE.get());
+    fprintf(fp, "\tsp: %04x    if:   %02x\n", sp, mmu->IF.get());
+    fprintf(fp, "\t&ffa6: %02x\n", mmu->address[0xFFA6]);
+    fclose(fp);
+};
+
+void Cpu::debug_tile_addr() {
+    for (int tile_addr = 0x8000; tile_addr < 0x9000; tile_addr+= 0x0010) {
+        printf("%04x: ", tile_addr);
+        for (int line_addr = 0; line_addr < 16; line_addr++)
+            printf(" %02x", mmu->address[tile_addr + line_addr]);
+        printf("\n");
+    }
+    printf("\n");
+};
+
+void Cpu::debug_map_addr() {
+    for (int tile_addr = 0x9800; tile_addr < 0x9A40; tile_addr+= 0x0010) {
+        printf("%04x: ", tile_addr);
+        for (int line_addr = 0; line_addr < 16; line_addr++)
+            printf(" %02x", mmu->address[tile_addr + line_addr]);
+        printf("\n");
+    }
     printf("\n");
 };
 
@@ -278,7 +300,6 @@ void Cpu::xor8(byte *op1, byte op2) {
 };
 
 void Cpu::cp8(byte *op1, byte op2) {
-    printf("cp :: %i %i\n", *op1, op2);
     set_z_flag(*op1 == op2);
     set_n_flag(1);
     set_h_flag((*op1 & 0xF) < (op2 & 0xF));

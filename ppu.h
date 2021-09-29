@@ -6,6 +6,12 @@
 #include "cpu.h"
 
 
+#define TILE_SET_ZERO_ADDRESS  0x8000
+#define TILE_SET_ONE_ADDRESS   0x8800
+
+#define TILE_MAP_ZERO_ADDRESS  0x9800
+#define TILE_MAP_ONE_ADDRESS   0x9C00
+
 #define PPU_BUFFER_WIDTH    160
 #define PPU_BUFFER_HEIGHT   144
 

@@ -45,6 +45,8 @@ class Cpu {
         void execute_opcode();
 
         void debug();
+        void debug_tile_addr();
+        void debug_map_addr();
 
         void swap8(byte *r8);
         void swap16(PairRegister *r16);

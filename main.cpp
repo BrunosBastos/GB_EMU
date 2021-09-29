@@ -68,8 +68,8 @@ void update_screen(Ppu *p) {
     SDL_RenderClear(renderer);
 
     draw_bg(p);
-    //draw_window(p);
-    //draw_sprites(p);
+    draw_window(p);
+    draw_sprites(p);
     
     SDL_RenderPresent(renderer);
 };
@@ -146,7 +146,9 @@ int main() {
     sdl_init();
     SDL_Event event;
 
-
+    FILE *fp;
+    fp = fopen("debug.txt", "w");
+    fclose(fp);
     initialize_optable();
 
     Emulator *emu = new Emulator("./roms/tetris.gb");
@@ -177,7 +179,7 @@ int main() {
         update_screen(emu->ppu);
 
         int endMs = SDL_GetTicks();
-        printf("fps=%d\n", time_between_frames - endMs + startMs);
+        //printf("fps=%d\n", time_between_frames - endMs + startMs);
         int delay = time_between_frames - (endMs - startMs);
         if(delay > 0) {
             SDL_Delay(delay);

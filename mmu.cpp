@@ -123,7 +123,6 @@ byte Mmu::get_joypad_state() {
 };
 
 void Mmu::write_memory(word addr, byte data) {
-    printf("HL:::::: %04x\n\n", addr);
 
     
     if ((addr >= 0x0000 && addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF)) {

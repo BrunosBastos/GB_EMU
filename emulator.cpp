@@ -12,10 +12,6 @@ Emulator::Emulator(char *filename) {
 void Emulator::run() {
     cpu->emulate_cycle();
     update_graphics();
-    if(cpu->total_clock > 2*70224) {
-        printf("LY: %04x\n\n\n\n", mmu->LY.get());
-        //exit(1);
-    }
     execute_interrupts();
 
 };
@@ -120,11 +116,10 @@ void Emulator::update_graphics() {
     }
  
     clock_count -= cpu->last_clock;
-    printf("clock_count: %03i\n", clock_count);
 
     if (clock_count <= 0) {
         byte curr_line = ++mmu->LY;
-        clock_count = 114;
+        clock_count += 114;
         
         if (curr_line == 144) {
             request_interrupt(INTERRUPT_VBLANK);

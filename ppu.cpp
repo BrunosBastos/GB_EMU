@@ -33,39 +33,25 @@ void Ppu::render_line() {
     }
 };
 
-
 void Ppu::update_bg_scanline(byte curr_line) {
     
-    word tile_map = get_bg_tile_map_select() ? 0x9C00 : 0x9800;
+    word tile_map = get_bg_tile_map_select() ? TILE_MAP_ONE_ADDRESS : TILE_MAP_ZERO_ADDRESS;
     byte tile_y = *scroll_y + curr_line;
 
     for (int pixel = 0; pixel < 160 && curr_line < 144; pixel++) {
         byte tile_x = pixel + *scroll_x;
-        word tile_addr = tile_map + (tile_y / 8) * 32 + (tile_x / 8);
+        assert(tile_x <= pixel);
+        word map_addr = tile_map + (tile_y / 8) * 32 + (tile_x / 8);
+        assert(0x8000 <= map_addr && map_addr <= 0x9C00);
 
-        update_bg_tile(pixel, curr_line, tile_x % 8, tile_y % 8, tile_addr);
-    }
-};
-
-void Ppu::update_window_scanline(byte curr_line) {
-
-    word tile_map = get_wnd_tile_map_select() ? 0x9C00 : 0x9800;
-    byte tile_y = curr_line - *windpos_x;
-
-    for (int pixel = 0; pixel < 160 && curr_line < 144; pixel++) {
-        byte tile_x = (pixel >= *windpos_x - 7) ? 
-            pixel + *scroll_x : pixel - *windpos_x - 7;
-        word tile_addr = tile_map + (tile_y / 8) * 32 + (tile_x / 8);
-
-        update_window_tile(pixel, curr_line, tile_x % 8, tile_y % 8, tile_addr);
+        update_bg_tile(pixel, curr_line, tile_x % 8, tile_y % 8, map_addr);
     }
 };
 
 void Ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
-    word tile_data = get_bg_wnd_tile_data_select() ? 0x8000 : 0x8800;
 
-    word tile_location = tile_data;
-    if (tile_data == 0x8000)
+    word tile_location = get_bg_wnd_tile_data_select() ? TILE_SET_ZERO_ADDRESS : TILE_SET_ONE_ADDRESS;
+    if (tile_location == TILE_SET_ZERO_ADDRESS)
         tile_location += (byte)mmu->read_memory(tile_addr) * 16;
     else
         tile_location += ((char)mmu->read_memory(tile_addr) + 128) * 16;
@@ -73,21 +59,35 @@ void Ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, w
     // each tile has 2 bytes
     byte data1 = mmu->read_memory(tile_location + offset_y *2);
     byte data2 = mmu->read_memory(tile_location + offset_y *2 + 1);
+    
 
     int color_bit = -(offset_x - 7);
-    int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  // combine 2 bytes to give a value 0-3
+    int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
     int color = (*pallets[0] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
                 (*pallets[0] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
     bg_buffer[pixel + curr_line * PPU_BUFFER_WIDTH] = get_color(color);
 };
 
+void Ppu::update_window_scanline(byte curr_line) {
+
+    word tile_map = get_wnd_tile_map_select() ? TILE_MAP_ONE_ADDRESS : TILE_MAP_ZERO_ADDRESS;
+    byte tile_y = curr_line - *windpos_x;
+
+    for (int pixel = 0; pixel < 160 && curr_line < 144; pixel++) {
+        byte tile_x = (pixel >= *windpos_x - 7) ?
+            pixel + *scroll_x : pixel - *windpos_x - 7;
+        word tile_addr = tile_map + (tile_y / 8) * 32 + (tile_x / 8);
+
+        update_window_tile(pixel, curr_line, tile_x % 8, tile_y % 8, tile_addr);
+    }
+};
+
 
 void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_y, word tile_addr) {
-    word tile_data = get_bg_wnd_tile_data_select() ? 0x8000 : 0x8800;
 
-    word tile_location = tile_data;
-    if (tile_data == 0x8000)
+    word tile_location = get_bg_wnd_tile_data_select() ? TILE_SET_ZERO_ADDRESS : TILE_SET_ONE_ADDRESS;
+    if (tile_location == TILE_SET_ZERO_ADDRESS)
         tile_location += (byte)mmu->read_memory(tile_addr) * 16;
     else
         tile_location += ((char)mmu->read_memory(tile_addr) + 128) * 16;
@@ -97,7 +97,7 @@ void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
     byte data2 = mmu->read_memory(tile_location + 2 * offset_y + 1);
 
     int color_bit = -(offset_x - 7);
-    int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));   // combine 2 bytes
+    int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
     int color = (*pallets[0] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
                 (*pallets[0] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
@@ -131,7 +131,6 @@ void Ppu::render_sprites() {
 
     // each sprite takes 4 bytes in the oam
     for (int sprite = 0; sprite < 40 * 4; sprite += 4) {
-
         byte py = mmu->read_memory(mmu->oam + sprite) - 16;
         byte px = mmu->read_memory(mmu->oam + sprite + 1) - 8;
         byte sprite_location = mmu->read_memory(mmu->oam + sprite + 2);
@@ -162,7 +161,7 @@ void Ppu::render_sprites() {
                     color_bit = -(color_bit - 7);
                 }
 
-                int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  
+                int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
                 byte p = attributes & (1 << 4) ? 2 : 1;     // choose the pallet
                 int color = (*pallets[p] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
                             (*pallets[p] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
@@ -179,7 +178,6 @@ int Ppu::get_color(byte color) {
     if (color == L_GRAY) return 0xFF6c6c6c;
     if (color == D_GRAY) return 0xFFf7f7f7;
     if (color == BLACK) return 0xFF000000;
-    printf("color: %i\n", color);
     assert(false);
 };
 

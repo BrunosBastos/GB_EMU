@@ -548,7 +548,7 @@ void op_34(Mmu* mmu, Cpu* cp) {
 
 void op_35(Mmu* mmu, Cpu* cp) {
     word hl = cp->reg_HL.get();
-    mmu->write_memory(hl, mmu->read_memory(hl) + 1);
+    mmu->write_memory(hl, mmu->read_memory(hl) - 1);
     
     cp->set_n_flag(1);
     cp->set_z_flag(mmu->read_memory(hl) == 0);
@@ -1279,7 +1279,6 @@ void op_FF(Mmu* mmu, Cpu* cp) {
 void op_CB(Mmu* mmu, Cpu* cp) {
     // TODO:
     int opcode = mmu->address[++(cp->pc)];
-    printf("cb::: %02x\n", opcode);
 
     byte reg = opcode & 0x07;
     byte bit = opcode & 0x38;

@@ -70,7 +70,6 @@ byte MemoryController0::read(word addr) {
 };
 
 void MemoryController0::write(word addr, byte data) {
-    printf("addr : %04x\n", addr);
     if (addr >= 0xA000 && addr <= 0xBFFF)
         //ram_banks.at(0)[addr & 0x1FFF] = data;
         assert(false);
