@@ -5,12 +5,17 @@
 #include "cpu.h"
 #include "mmu.h"
 
+typedef struct {
+    int cycles;
+    int conditional_cycles;
+} cycles;
+
 void initialize_optable();
 void initialize_optable_cb();
 extern void(*optable[0xFF])(Mmu* memory, Cpu* cp);
 extern void(*optable_cb[0xBF])(Mmu* memory, Cpu* cp);
-extern byte cycle_table[0xFF];
-extern byte cycle_table_cb[0xBF];
+extern cycles cycle_table[0xFF];
+extern cycles cycle_table_cb[0xBF];
 
 
 void op_00(Mmu* memory, Cpu* cp);

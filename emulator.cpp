@@ -110,6 +110,8 @@ void Emulator::key_released(int key) {
 
 /* Graphics */
 
+// https://gbdev.io/pandocs/LCDC.html 
+
 void Emulator::update_graphics() {
     set_lcd_status();
 
@@ -122,7 +124,7 @@ void Emulator::update_graphics() {
 
     if (clock_count <= 0) {
         byte curr_line = ++mmu->LY;
-        clock_count += 456;
+        clock_count = 114;
         
         if (curr_line == 144) {
             request_interrupt(INTERRUPT_VBLANK);
@@ -138,7 +140,7 @@ void Emulator::update_graphics() {
 void Emulator::set_lcd_status() {
     if (!ppu->get_lcd_display_enable()) {
         // set the mode to 1 during lcd disabled and reset scanline
-        clock_count = 456;
+        clock_count = 114;
         mmu->LY.set(0);
         ppu->set_mode(1);
         return;
@@ -152,8 +154,8 @@ void Emulator::set_lcd_status() {
         ppu->set_mode(1);
         req_interrupt = mmu->STAT.get() & 0x10;
     } else {
-        int mode2bounds = 456 - 80;
-        int mode3bounds = mode2bounds - 172;
+        int mode2bounds = 114 - 20;
+        int mode3bounds = mode2bounds - 43;
 
         if (clock_count >= mode2bounds) {
             ppu->set_mode(2);
@@ -168,19 +170,18 @@ void Emulator::set_lcd_status() {
         }
     }
 
-    // request interrupt if mode is different
+    // request interrupt 
     if (req_interrupt && (ppu->get_mode() != last_mode)) {
         request_interrupt(INTERRUPT_LCDC);
     }
-    
+
     if (mmu->LY.get() == mmu->LYC.get()) {
-        mmu->STAT |= 0x04;
+        mmu->STAT |= 0x04;      // set bit 2 if the LY == LYC
         if (mmu->STAT.get() & 0x40) {
-            // bit 6
             request_interrupt(INTERRUPT_LCDC);
         }
     } else {
-        mmu->STAT &= ~0x04;
+        mmu->STAT &= ~0x04;     // reset bit 2 if LY != LYC
     }
 };
 

@@ -8,7 +8,6 @@
 Ppu::Ppu(Mmu* mmu) {
 
     this->mmu = mmu;
-    clock_count = 456;
 
     lcd_control = &mmu->address[mmu->ppu];
     lcd_status  = &mmu->address[mmu->ppu + 0x01];
@@ -77,7 +76,8 @@ void Ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, w
 
     int color_bit = -(offset_x - 7);
     int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  // combine 2 bytes to give a value 0-3
-    int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));  // pick 1 of the 4 colors in the pallet
+    int color = (*pallets[0] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
+                (*pallets[0] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
     bg_buffer[pixel + curr_line * PPU_BUFFER_WIDTH] = get_color(color);
 };
@@ -98,7 +98,8 @@ void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
 
     int color_bit = -(offset_x - 7);
     int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));   // combine 2 bytes
-    int color = (*pallets[0] & (1 << (2 * color_num + 1))) << 1 | (*pallets[0] & (1 << (2 * color_num)));
+    int color = (*pallets[0] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
+                (*pallets[0] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
     // if the color num is 0 then the tile is transparent, same for sprites
     window_buffer[pixel + curr_line * PPU_BUFFER_WIDTH] = color_num == 0 ? 0x00000000 : get_color(color);
@@ -108,14 +109,14 @@ void Ppu::render_tiles() {
 
     byte curr_line = mmu->LY.get();
 
-    if(curr_line > 143) {
+    if (curr_line > 143) {
         return;
     }
 
-    if(get_wnd_display_enable() && *windpos_y <= curr_line) {
+    if (get_wnd_display_enable() && *windpos_y <= curr_line) {
         update_window_scanline(curr_line);
     }
-    if(get_bg_display()) {
+    if (get_bg_display()) {
         update_bg_scanline(curr_line);
     }
 };
@@ -124,7 +125,7 @@ void Ppu::render_sprites() {
 
     byte curr_line = mmu->LY.get();
 
-    if(curr_line > 143) {
+    if (curr_line > 143) {
         return;
     }
 
@@ -163,7 +164,8 @@ void Ppu::render_sprites() {
 
                 int color_num = (data2 & (1 << color_bit)) << 1 | (data1 & (1 << color_bit));  
                 byte p = attributes & (1 << 4) ? 2 : 1;     // choose the pallet
-                int color = (*pallets[p] & (1 << (2 * color_num + 1))) << 1 | (*pallets[p] & (1 << (2 * color_num)));
+                int color = (*pallets[p] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
+                            (*pallets[p] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
                 sprites_buffer[pixel + curr_line * PPU_BUFFER_WIDTH] = color_num == 0 ? 0x00000000 : get_color(color);
             }
@@ -177,6 +179,8 @@ int Ppu::get_color(byte color) {
     if (color == L_GRAY) return 0xFF6c6c6c;
     if (color == D_GRAY) return 0xFFf7f7f7;
     if (color == BLACK) return 0xFF000000;
+    printf("color: %i\n", color);
+    assert(false);
 };
 
 void Ppu::set_mode(int mode) { *lcd_status = ((*lcd_status & 252) | mode); };

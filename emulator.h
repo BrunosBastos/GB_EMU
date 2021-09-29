@@ -24,7 +24,7 @@ class Emulator {
     private:
 
 		// float framerate = 60;
-		int clock_count = 456;
+		int clock_count = 114;
 
 		// -------- EVENTS ------- //
 		// void handle_events();

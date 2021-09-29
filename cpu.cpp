@@ -23,7 +23,7 @@ Cpu::Cpu(Mmu* mmu) {
 void Cpu::emulate_cycle() {
     // get opcode
     opcode = mmu->read_memory(pc);
-    last_clock = cycle_table[opcode];
+    last_clock = cycle_table[opcode].cycles;
 
     // decode and execute op
     execute_opcode();
@@ -48,9 +48,9 @@ void Cpu::emulate_cycle() {
 void Cpu::execute_opcode() {
     debug();
     
-    if(pc == 0x040){
+    if(pc == 0x29a){
         n_op++;
-        //exit(1);
+        exit(1);
         if(n_op == 8)
             exit(1);
 
@@ -198,7 +198,7 @@ void Cpu::bit(byte *reg_8, byte bit) {
 
 void Cpu::bit(PairRegister *reg_16, byte bit) {
 
-    last_clock = 16;        // the clock for this operation is different
+    last_clock = 5;        // the clock for this operation is different
     set_z_flag(!(mmu->read_memory(reg_16->get()) & (1 << bit)));
     set_n_flag(0);
     set_h_flag(1);
@@ -209,7 +209,7 @@ void Cpu::set(byte *reg_8, byte bit) {
 };
 
 void Cpu::set(PairRegister *reg_16, byte bit) {
-    last_clock = 16;
+    last_clock = 5;
     mmu->write_memory(reg_16->get(), mmu->read_memory(reg_16->get()) | (1 << bit));
 };
 
@@ -218,7 +218,7 @@ void Cpu::res(byte *reg_8, byte bit) {
 };
 
 void Cpu::res(PairRegister *reg_16, byte bit) {
-    last_clock = 16;
+    last_clock = 5;
     mmu->write_memory(reg_16->get(), mmu->read_memory(reg_16->get()) & ~(1 << bit));
 };
 
