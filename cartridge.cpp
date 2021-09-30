@@ -1,7 +1,7 @@
 #include "cartridge.h"
 #include <string.h>
 
-Cartridge::Cartridge(char* filename) {
+Cartridge::Cartridge(const char* filename) {
     FILE *file = NULL;
     file = fopen(filename, "rb");
     

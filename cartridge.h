@@ -13,7 +13,7 @@ class Cartridge {
         byte* rom;
         uint32_t size;    
 
-        Cartridge(char *filename);
+        Cartridge(const char *filename);
 
         void cartridge_free();
         void print(int s, int e);

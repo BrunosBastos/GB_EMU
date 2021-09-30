@@ -62,15 +62,6 @@ class Ppu {
         void set_mode(int mode);
         byte get_mode();
 
-        void set_lcd_display_enable(bool status);
-        void set_wnd_tile_map_select(bool status);
-        void set_wnd_display_enable(bool status);
-        void set_bg_wnd_tile_data_select(bool status);
-        void set_bg_tile_map_select(bool status);
-        void set_obj_size(bool status);
-        void set_obj_display_enable(bool status);
-        void set_bg_display(bool status);
-
         bool get_lcd_display_enable();
         bool get_wnd_tile_map_select();
         bool get_wnd_display_enable();

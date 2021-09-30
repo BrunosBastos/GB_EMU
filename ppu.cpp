@@ -1,9 +1,5 @@
 #include "ppu.h"
 
-// http://www.codeslinger.co.uk/pages/projects/gameboy/lcd.html
-// http://www.codeslinger.co.uk/pages/projects/gameboy/graphics.html
-// http://www.codeslinger.co.uk/pages/projects/gameboy/interupts.html
-
 
 Ppu::Ppu(Mmu* mmu) {
 
@@ -25,6 +21,10 @@ Ppu::Ppu(Mmu* mmu) {
 
 void Ppu::render_line() {
     
+    /*
+        LCDC register controls whether the tiles or sprites are drawn 
+    */
+
     if (get_bg_display()) {
         render_tiles();
     }
@@ -34,15 +34,21 @@ void Ppu::render_line() {
 };
 
 void Ppu::update_bg_scanline(byte curr_line) {
-    
+    /*
+        Tile map is either stored starting from 0x9C00 or 0x9800.
+        Each pixel points to a tile in the tile set.
+
+        Iterate the current line and for each pixel, find the 
+        corresponding tile and give that pixel the color
+        according to the tile information stored in the tileset.
+    */
+
     word tile_map = get_bg_tile_map_select() ? TILE_MAP_ONE_ADDRESS : TILE_MAP_ZERO_ADDRESS;
     byte tile_y = *scroll_y + curr_line;
 
     for (int pixel = 0; pixel < 160 && curr_line < 144; pixel++) {
         byte tile_x = pixel + *scroll_x;
-        assert(tile_x <= pixel);
         word map_addr = tile_map + (tile_y / 8) * 32 + (tile_x / 8);
-        assert(0x8000 <= map_addr && map_addr <= 0x9C00);
 
         update_bg_tile(pixel, curr_line, tile_x % 8, tile_y % 8, map_addr);
     }
@@ -60,9 +66,11 @@ void Ppu::update_bg_tile(int pixel, int curr_line, int offset_x, int offset_y, w
     byte data1 = mmu->read_memory(tile_location + offset_y *2);
     byte data2 = mmu->read_memory(tile_location + offset_y *2 + 1);
     
-
+    // bit 0 is the right most bit in a byte, so the first pixel needs to point to 0
     int color_bit = -(offset_x - 7);
-    int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
+
+    int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | 
+                    (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
     int color = (*pallets[0] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
                 (*pallets[0] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
@@ -97,7 +105,8 @@ void Ppu::update_window_tile(int pixel, int curr_line, int offset_x, int offset_
     byte data2 = mmu->read_memory(tile_location + 2 * offset_y + 1);
 
     int color_bit = -(offset_x - 7);
-    int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
+    int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | 
+                    (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
     int color = (*pallets[0] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
                 (*pallets[0] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
@@ -161,7 +170,8 @@ void Ppu::render_sprites() {
                     color_bit = -(color_bit - 7);
                 }
 
-                int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
+                int color_num = (data2 & (1 << color_bit)) >> (color_bit - 1) | 
+                                (data1 & (1 << color_bit)) >> (color_bit);  // combine 2 bytes to give a value 0-3
                 byte p = attributes & (1 << 4) ? 2 : 1;     // choose the pallet
                 int color = (*pallets[p] & (1 << (2 * color_num + 1))) >> (2 * color_num) | 
                             (*pallets[p] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
@@ -184,31 +194,6 @@ int Ppu::get_color(byte color) {
 void Ppu::set_mode(int mode) { *lcd_status = ((*lcd_status & 252) | mode); };
 
 byte Ppu::get_mode() { return *lcd_status & 3; };
-
-void Ppu::set_lcd_display_enable(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 7)) | (status << 7);
-};
-void Ppu::set_wnd_tile_map_select(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 6)) | (status << 6);
-};
-void Ppu::set_wnd_display_enable(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 5)) | (status << 5);
-};
-void Ppu::set_bg_wnd_tile_data_select(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 4)) | (status << 4);
-};
-void Ppu::set_bg_tile_map_select(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 3)) | (status << 3);
-};
-void Ppu::set_obj_size(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 2)) | (status << 2);
-};
-void Ppu::set_obj_display_enable(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 1)) | (status << 1);
-};
-void Ppu::set_bg_display(bool status) {
-    *lcd_control = (*lcd_control & ~(1UL << 0)) | (status << 0);
-};
 
 bool Ppu::get_lcd_display_enable() { return *lcd_control & 0x80; };
 bool Ppu::get_wnd_tile_map_select() { return *lcd_control & 0x40; };

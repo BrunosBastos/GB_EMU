@@ -1,7 +1,7 @@
 #include "emulator.h"
 
 
-Emulator::Emulator(char *filename) {
+Emulator::Emulator(const char *filename) {
 
     Cartridge *c = new Cartridge(filename);
     mmu = new Mmu(c);

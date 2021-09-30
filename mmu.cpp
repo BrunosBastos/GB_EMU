@@ -153,8 +153,8 @@ void Mmu::write_memory(word addr, byte data) {
     }
 
     else if (addr == 0xFF07) {
-        // FIXME: idk what the clocks mean
-        if (TAC.get() != data & 0x03) {
+		// TODO: are the () correct? changed while refactoring
+        if (TAC.get() != (data & 0x03)) {
             TIMA.set(0);
         }
         TAC.set(data);

@@ -11,9 +11,10 @@ class Cpu {
     public:
 
         Cpu(Mmu* mmu);
-        Mmu *mmu;                // pointer to the memory object
-        word pc;
-        word opcode;
+        Mmu *mmu;               // pointer to the memory object
+        word pc = 0x100;		// program counter
+        word opcode;			// current operation code
+        word sp = 0xFFFE;		// stack pointer
 
         int n_op = 0;
 
@@ -23,19 +24,15 @@ class Cpu {
         int divider_counter;
         int current_clock_speed;
         
-        byte reg_A, reg_F, 
+        byte reg_A, reg_F, 		// registers 
             reg_B, reg_C, 
             reg_D, reg_E, 
             reg_H, reg_L;
 
-        PairRegister reg_AF = PairRegister(&reg_A, &reg_F);
+        PairRegister reg_AF = PairRegister(&reg_A, &reg_F);		// register pairs
         PairRegister reg_BC = PairRegister(&reg_B, &reg_C);
         PairRegister reg_DE = PairRegister(&reg_D, &reg_E);
         PairRegister reg_HL = PairRegister(&reg_H, &reg_L);
-
-
-        word sp;
-
 
         bool interrupt_master;
         bool pending_interrupt_disabled;

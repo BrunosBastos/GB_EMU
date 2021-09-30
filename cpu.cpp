@@ -46,8 +46,11 @@ void Cpu::emulate_cycle() {
 };
 
 void Cpu::execute_opcode() {
-    debug();
-    
+    //debug();
+    if(mmu->read_memory(0xff02) == 0x81)
+        printf("%s \n", mmu->read_memory(0xff01));
+
+
     (*optable[opcode])(mmu, this);
 };
 

@@ -10,7 +10,7 @@
 class Emulator {
 
     public:
-		Emulator(char *filename);
+		Emulator(const char *filename);
 		void run();
 		Cpu *cpu;
 		Mmu *mmu;
