@@ -138,6 +138,12 @@ void Ppu::render_sprites() {
         return;
     }
 
+    // line is cleared before the sprites are written
+    // otherwise they will stay there forever
+    for(int i=0; i < PPU_BUFFER_WIDTH; i++) {
+        sprites_buffer[i + curr_line * PPU_BUFFER_WIDTH] = 0;
+    }
+
     // each sprite takes 4 bytes in the oam
     for (int sprite = 0; sprite < 40 * 4; sprite += 4) {
         byte py = mmu->read_memory(mmu->oam + sprite) - 16;
@@ -145,19 +151,26 @@ void Ppu::render_sprites() {
         byte sprite_location = mmu->read_memory(mmu->oam + sprite + 2);
         byte attributes = mmu->read_memory(mmu->oam + sprite + 3);
 
-        int ysize = get_obj_size() ? 16 : 8;
+        /* 
+            attributes -> 1byte
+                bit 7 - priority
+                bit 6 - Y flip
+                bit 5 - X flip
+                bit 4 - palette number
+        */
+
+        int ysize = get_obj_size() ? 16 : 8;      // bit 2 of LCDC
 
         // draw only the sprites in the curr line
         if ((curr_line >= py) && (curr_line < (py + ysize))) {
-            int curry = curr_line - py;
+            int pixel_y = curr_line - py;
 
-            // check if invert y axis
+            // check if y flip
             if (attributes & (1 << 6)) {
-                curry = -(curry - ysize);
+                pixel_y = -(pixel_y - ysize);
             }
-            curry *= 2;
 
-            word data_addr = (mmu->vram + (sprite_location * 16)) + curry;
+            word data_addr = (mmu->vram + (sprite_location * 16)) + pixel_y * 2;
             byte data1 = mmu->read_memory(data_addr);
             byte data2 = mmu->read_memory(data_addr + 1);
 
@@ -177,6 +190,14 @@ void Ppu::render_sprites() {
                             (*pallets[p] & (1 << (2 * color_num))) >> (2 * color_num);  // pick 1 of the 4 colors in the pallet
 
                 sprites_buffer[pixel + curr_line * PPU_BUFFER_WIDTH] = color_num == 0 ? 0x00000000 : get_color(color);
+
+                /*
+                    FIXME: 
+                    if priority flag is set to 0, the sprite is rendered a above windown and background
+                    however, if the value is set to 1, then it is only visible if both background and window
+                    are White. 
+                */
+
             }
         }
     }
