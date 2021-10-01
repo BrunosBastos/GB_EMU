@@ -1,5 +1,10 @@
 #include "cpu.h"
 #include "opcodes.h"
+#include <set>
+#include <string>
+
+std::set<int> ops;
+std::set<int> ops_cb;
 
 Cpu::Cpu(Mmu* mmu) {
     this->mmu = mmu;
@@ -48,24 +53,48 @@ void Cpu::emulate_cycle() {
 void Cpu::execute_opcode() {
     //debug();
     if(mmu->read_memory(0xff02) == 0x81)
-        printf("%s \n", mmu->read_memory(0xff01));
+        printf("-> %02x\n", mmu->read_memory(0xff01));
 
+    //printf("opcode: %02x\n", opcode);
+     if(opcode != 0xCB)
+        ops.insert(opcode);
+    else 
+        ops_cb.insert(mmu->read_memory(pc + 1));
+
+    if (pc == 0x40) {
+        n_op++;
+        //printf("%i\n", n_op);  
+        //debug_tile_addr();
+        //debug_map_addr();
+        //if (n_op >= 40 && n_op < 100 && n_op % 10 == 0)
+            //debug_dump_memory();
+    }
+    
+    if (n_op == 128) {
+        //debug();
+        // FILE *fp;
+        // fp = fopen("opcodes_debug.txt", "w");
+
+        // for (int i=0; i < 0xFF; i++) {
+        //     fprintf(fp, "%02x %c\n", i, ops.count(i) ? 'x' : ' ');
+        // }
+
+        // for (int i=0; i < 0xFF; i++) {
+        //     fprintf(fp, "cb %02x %c\n", i, ops_cb.count(i) ? 'x' : ' ');
+        // }
+
+        // fclose(fp);
+        //exit(1);
+    }
+    
 
     (*optable[opcode])(mmu, this);
 };
 
 
 void Cpu::debug() {
-
-    if (pc == 0x40) {
-        //debug_tile_addr();
-        //debug_map_addr();
-    }
-    
-
     FILE *fp;
     fp = fopen("debug.txt", "a+");
-
     fprintf(fp, "\npc: %04x\n", pc);
     fprintf(fp, "\topcode: %02x  last_clock: %2i\n", opcode, last_clock);
     fprintf(fp, "\taf: %02x%02x    lcdc: %02x\n", reg_A, reg_F, mmu->LCDC.get());
@@ -73,7 +102,7 @@ void Cpu::debug() {
     fprintf(fp, "\tde: %02x%02x    ly:   %02x  (%3i)\n", reg_D, reg_E, mmu->LY.get(), mmu->LY.get());
     fprintf(fp, "\thl: %02x%02x    ie:   %02x\n", reg_H, reg_L,  mmu->IE.get());
     fprintf(fp, "\tsp: %04x    if:   %02x\n", sp, mmu->IF.get());
-    fprintf(fp, "\t&ffa6: %02x\n", mmu->address[0xFFA6]);
+    fprintf(fp, "\t&df82: %02x\n", mmu->address[0xdf82]);
     fclose(fp);
 };
 
@@ -86,6 +115,20 @@ void Cpu::debug_tile_addr() {
     }
     printf("\n");
 };
+
+void Cpu::debug_dump_memory() {
+    FILE *fp;
+    std::string s = "mem" + std::to_string(n_op) + ".txt";
+    char *arr = &s[0];
+    fp = fopen(arr, "w");
+
+    for (int i = 0; i < 0x10000; i++) {
+        if (i % 16 == 0)
+            fprintf(fp, "\n%04x: ", i);
+        fprintf(fp, "%02x ", mmu->address[i]);
+    }
+    fclose(fp);
+}
 
 void Cpu::debug_map_addr() {
     for (int tile_addr = 0x9800; tile_addr < 0x9A40; tile_addr+= 0x0010) {
@@ -334,7 +377,7 @@ void Cpu::add16(PairRegister *op1, word op2) {
     set_h_flag((0x0FFF & op1->get()) + (0X0FFF & op2) > 0x0FFF);
     set_c_flag((0xFFFF - op1->get()) < op2);
 
-    op1->set(op1->get() + op2);
+    op1->set((op1->get() + op2) & 0xFFFF);
 };
 
 

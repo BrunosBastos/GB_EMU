@@ -20,7 +20,7 @@ void sdl_init() {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window =
         SDL_CreateWindow("test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                         500, 500, SDL_WINDOW_SHOWN);
+                         800, 600, SDL_WINDOW_SHOWN);
 
     renderer = SDL_CreateRenderer(window, -1, 0);
     bg_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, PPU_BUFFER_WIDTH, PPU_BUFFER_HEIGHT);

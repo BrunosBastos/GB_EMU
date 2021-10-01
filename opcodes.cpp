@@ -342,71 +342,92 @@ void initialize_optable_cb() {
     optable_cb[0x3F] = &op_CB_3F; cycle_table_cb[0x3F] = {2, 0};
 }
 
-void op_00(Mmu* mmu, Cpu* cp) { 
+void op_00(Mmu* mmu, Cpu* cp) {
+    // NOP
 	;
 };
 
 void op_01(Mmu* mmu, Cpu* cp) {
+    // LD BC, nn
     cp->reg_C = mmu->read_memory(++cp->pc);
     cp->reg_B = mmu->read_memory(++cp->pc);
 };
 
 void op_02(Mmu* mmu, Cpu* cp) {
+    // LD (BC), A
     mmu->write_memory(cp->reg_BC.get(), cp->reg_A);
 };
 
-void op_03(Mmu* mmu, Cpu* cp) { 
+void op_03(Mmu* mmu, Cpu* cp) {
+    // INC BC 
 	cp->inc16(&cp->reg_BC);
 };
 
 void op_04(Mmu* mmu, Cpu* cp) {
+    // INC B
 	cp->inc8(&cp->reg_B);
 };
 
 void op_05(Mmu* mmu, Cpu* cp) { 
+    // DEC B
 	cp->dec8(&cp->reg_B);
 };
 
 void op_06(Mmu* mmu, Cpu* cp) {
+    // LD B, n
     cp->reg_B = mmu->read_memory(++cp->pc);
 };
 
 void op_07(Mmu* mmu, Cpu* cp) { 
+    // RLCA
 	cp->rlc8(&cp->reg_A);
+    /*
+        idk why but according to 2 emulators they set the z flag to false always
+    */
+   cp->set_z_flag(0); // FIXME: 
 };
 
 void op_08(Mmu* mmu, Cpu* cp) {
+    // LD NN, SP
     word nn = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
-    mmu->write_memory(nn++, cp->sp & 0xFF);			// FIXME: we were writting to the same address twice
+    mmu->write_memory(nn++, cp->sp & 0xFF);
     mmu->write_memory(nn, (cp->sp & 0xFF00) << 8);
 };
 
 void op_09(Mmu* mmu, Cpu* cp) { 
+    // ADD HL, BC
 	cp->add16(&cp->reg_HL, cp->reg_BC.get());
 };
 
 void op_0A(Mmu* mmu, Cpu* cp) {
-    cp->reg_A = mmu->read_memory(cp->reg_BC.get());		// TODO: refactor
+    // LD A, (BC)
+    cp->reg_A = mmu->read_memory(cp->reg_BC.get());
 };
 
 void op_0B(Mmu* mmu, Cpu* cp) { 
+    //  DEC BC
 	cp->dec16(&cp->reg_BC);
 };
 
-void op_0C(Mmu* mmu, Cpu* cp) { 
+void op_0C(Mmu* mmu, Cpu* cp) {
+    // INC C 
 	cp->inc8(&cp->reg_C);
 };
 
 void op_0D(Mmu* mmu, Cpu* cp) { 
+    // DEC C
 	cp->dec8(&cp->reg_C); 
 };
 
 void op_0E(Mmu* mmu, Cpu* cp) {
+    // LD C, N
     cp->reg_C = mmu->read_memory(++cp->pc);
 };
 
 void op_0F(Mmu* mmu, Cpu* cp) { 
-	cp->rrc8(&cp->reg_A); 
+    // RRCA
+	cp->rrc8(&cp->reg_A);
+    cp->set_z_flag(0); // FIXME: same as op 07 
 };
 
 void op_10(Mmu* mmu, Cpu* cp) {
@@ -414,96 +435,120 @@ void op_10(Mmu* mmu, Cpu* cp) {
 };
 
 void op_11(Mmu* mmu, Cpu* cp) {
+    // LD DE, NN
     cp->reg_E = mmu->read_memory(++cp->pc);
     cp->reg_D = mmu->read_memory(++cp->pc);
 };
 
 void op_12(Mmu* mmu, Cpu* cp) {
+    // LD (DE), A
     mmu->write_memory(cp->reg_DE.get(), cp->reg_A);
 };
 
-void op_13(Mmu* mmu, Cpu* cp) { 
+void op_13(Mmu* mmu, Cpu* cp) {
+    // INC DE 
 	cp->inc16(&cp->reg_DE); 
 };
 
-void op_14(Mmu* mmu, Cpu* cp) { 
+void op_14(Mmu* mmu, Cpu* cp) {
+    // INC D 
 	cp->inc8(&cp->reg_D); 
 };
 
 void op_15(Mmu* mmu, Cpu* cp) { 
+    // DEC D
 	cp->dec8(&cp->reg_D); 
 };
 
 void op_16(Mmu* mmu, Cpu* cp) {
+    // LD D, N
     cp->reg_D = mmu->read_memory(++cp->pc);
 };
 
-void op_17(Mmu* mmu, Cpu* cp) { 
-	cp->rl8(&cp->reg_A); 
+void op_17(Mmu* mmu, Cpu* cp) {
+    // RLCA 
+	cp->rl8(&cp->reg_A);
+    cp->set_z_flag(0); // FIXME: same as others 
 };
 
 void op_18(Mmu* mmu, Cpu* cp) { 
-	cp->pc += (char)mmu->read_memory(++cp->pc) - 1; 	// FIXME: n is signed immediate value
+    // JR NN
+	cp->pc += (char)mmu->read_memory(++cp->pc);
 };
 
-void op_19(Mmu* mmu, Cpu* cp) { 
+void op_19(Mmu* mmu, Cpu* cp) {
+    // ADD HL, DE 
 	cp->add16(&cp->reg_HL, cp->reg_DE.get()); 
 };
 
 void op_1A(Mmu* mmu, Cpu* cp) {
+    // ADD (DE), A
     cp->reg_A = mmu->read_memory(cp->reg_DE.get());
 };
 
 void op_1B(Mmu* mmu, Cpu* cp) { 
+    // DEC DE
 	cp->dec16(&cp->reg_DE); 
 };
 
 void op_1C(Mmu* mmu, Cpu* cp) { 
+    // INC E
 	cp->inc8(&cp->reg_E); 
 };
 
 void op_1D(Mmu* mmu, Cpu* cp) { 
-	cp->dec8(&cp->reg_E); 
+    // DEC 8
+    cp->dec8(&cp->reg_E);
 };
 
 void op_1E(Mmu* mmu, Cpu* cp) {
+    // LD E, N
     cp->reg_E = mmu->read_memory(++cp->pc);
 };
 
 void op_1F(Mmu* mmu, Cpu* cp) { 
+    // RRA
 	cp->rr8(&cp->reg_A); 
+    cp->set_z_flag(0); // FIXME: same as others
 };
 
 void op_20(Mmu* mmu, Cpu* cp) {
+    // JR NZ, NN
     cp->pc++;
     if (!cp->get_z_flag()) {
         cp->last_clock += cycle_table[0x20].conditional_cycles;
-        cp->pc += (char)mmu->read_memory(cp->pc);    // TODO: should dec 1 ??
+        cp->pc += (char)mmu->read_memory(cp->pc);
     }
 };
 
 void op_21(Mmu* mmu, Cpu* cp) {
+    // LD HL, NN
     cp->reg_L = mmu->read_memory(++cp->pc);
     cp->reg_H = mmu->read_memory(++cp->pc);
 };
 
 void op_22(Mmu* mmu, Cpu* cp) {
+    // LDI (HL), A
     mmu->write_memory(cp->reg_HL++, cp->reg_A);
 };
 
 void op_23(Mmu* mmu, Cpu* cp) { 
+    // INC HL
 	cp->inc16(&cp->reg_HL); 
 };
 
 void op_24(Mmu* mmu, Cpu* cp) { 
+    // INC H
 	cp->inc8(&cp->reg_H); 
 };
 
-void op_25(Mmu* mmu, Cpu* cp) { 
+void op_25(Mmu* mmu, Cpu* cp) {
+    // DEC H 
 	cp->dec8(&cp->reg_H); 
 };
 
 void op_26(Mmu* mmu, Cpu* cp) {
+    // LD H, N
     cp->reg_H = mmu->read_memory(++cp->pc);
 };
 
@@ -532,65 +577,78 @@ void op_27(Mmu* mmu, Cpu* cp) {
 };
 
 void op_28(Mmu* mmu, Cpu* cp) {
+    // JR Z, N
     cp->pc++;
     if (cp->get_z_flag()) {
         cp->last_clock += cycle_table[0x28].conditional_cycles;
-        cp->pc += (char)mmu->read_memory(cp->pc);		// TODO: dec 1?
+        cp->pc += (char)mmu->read_memory(cp->pc);
     }
 };
 
 void op_29(Mmu* mmu, Cpu* cp) { 
+    // ADD HL, HL
 	cp->add16(&cp->reg_HL, cp->reg_HL.get()); 
 };
 
 void op_2A(Mmu* mmu, Cpu* cp) {
+    // LDI A, (HL)
     cp->reg_A = mmu->read_memory(cp->reg_HL++);
 };
 
 void op_2B(Mmu* mmu, Cpu* cp) { 
-	cp->dec16(&cp->reg_HL); 
+    // DEC HL
+	cp->dec16(&cp->reg_HL);
 };
 
 void op_2C(Mmu* mmu, Cpu* cp) { 
-	cp->inc8(&cp->reg_L); 
+    // INC L
+	cp->inc8(&cp->reg_L);
 };
 
 void op_2D(Mmu* mmu, Cpu* cp) { 
-	cp->dec8(&cp->reg_L); 
+    // DEC L
+	cp->dec8(&cp->reg_L);
 };
 
 void op_2E(Mmu* mmu, Cpu* cp) {
+    // LD L, N
     cp->reg_L = mmu->read_memory(++cp->pc);
 };
 
 void op_2F(Mmu* mmu, Cpu* cp) {
+    // CPL
     cp->set_n_flag(1);
     cp->set_h_flag(1);
 
-    cp->reg_A = ~cp->reg_A;
+    cp->reg_A ^= 0xFF;
 };
 
 void op_30(Mmu* mmu, Cpu* cp) {
+    // JR NC, N
     cp->pc++;
     if (!cp->get_c_flag()) {
         cp->last_clock += cycle_table[0x30].conditional_cycles;
-        cp->pc += (char)mmu->read_memory(cp->pc);    // signed value
+        cp->pc += (char)mmu->read_memory(cp->pc);
     }
 };
 
 void op_31(Mmu* mmu, Cpu* cp) {
+    // LD SP, NN
     cp->sp = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
 };
 
 void op_32(Mmu* mmu, Cpu* cp) {
+    // LDD (HL), A
     mmu->write_memory(cp->reg_HL--, cp->reg_A);
 };
 
 void op_33(Mmu* mmu, Cpu* cp) {
+    // INC SP
     cp->sp++;
 };
 
 void op_34(Mmu* mmu, Cpu* cp) {
+    // INC (HL)
     word hl = cp->reg_HL.get();
     byte value =  mmu->read_memory(hl) + 1;
     mmu->write_memory(hl, value);
@@ -601,62 +659,72 @@ void op_34(Mmu* mmu, Cpu* cp) {
 };
 
 void op_35(Mmu* mmu, Cpu* cp) {
-	// TODO: check if correct
+	// DEC (HL)
     word hl = cp->reg_HL.get();
 	byte value = mmu->read_memory(hl) - 1;
     mmu->write_memory(hl, value);
     
     cp->set_n_flag(1);
     cp->set_z_flag(value == 0);
-    cp->set_h_flag(!((value - 1) & 0xF));
+    cp->set_h_flag((value & 0x0F) == 0x0F);
 };
 
 void op_36(Mmu* mmu, Cpu* cp) {
+    // LD (HL), N
     mmu->write_memory(cp->reg_HL.get(), mmu->read_memory(++cp->pc));
 };
 
 void op_37(Mmu* mmu, Cpu* cp) {
+    // SCF
     cp->set_n_flag(0);
     cp->set_h_flag(0);
     cp->set_c_flag(1);
 };
 
 void op_38(Mmu* mmu, Cpu* cp) {
+    // JR C, NN
     cp->pc++;
     if (cp->get_c_flag()) {
         cp->last_clock += cycle_table[0x38].conditional_cycles;
-        cp->pc += (char)mmu->read_memory(cp->pc);    // signed value
+        cp->pc += (char)mmu->read_memory(cp->pc);
     }
 };
 
 void op_39(Mmu* mmu, Cpu* cp) { 
+    // ADD HL, SP
 	cp->add16(&cp->reg_HL, cp->sp); 
 };
 
 void op_3A(Mmu* mmu, Cpu* cp) {
+    // LDD A, (HL)
     cp->reg_A = mmu->read_memory(cp->reg_HL--);
 };
 
 void op_3B(Mmu* mmu, Cpu* cp) { 
+    // DEC SP
 	cp->sp--; 
 };
 
 void op_3C(Mmu* mmu, Cpu* cp) { 
+    // INC A
 	cp->inc8(&cp->reg_A); 
 };
 
 void op_3D(Mmu* mmu, Cpu* cp) { 
+    // DEC A
 	cp->dec8(&cp->reg_A); 
 };
 
 void op_3E(Mmu* mmu, Cpu* cp) {
+    // LD A, N
     cp->reg_A = mmu->read_memory(++cp->pc);
 };
 
 void op_3F(Mmu* mmu, Cpu* cp) {
+    // CCF
     cp->set_n_flag(0);
     cp->set_h_flag(0);
-    cp->set_c_flag(!(cp->get_c_flag()));   // FIXME: changed from ~ to !
+    cp->set_c_flag(!(cp->get_c_flag()));
 };
 
 void op_40(Mmu* mmu, Cpu* cp) { 
@@ -1193,7 +1261,7 @@ void op_C2(Mmu* mmu, Cpu* cp) {
 
 void op_C3(Mmu* mmu, Cpu* cp) {
     cp->pc = (mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8)) - 1;
-};
+}
 
 void op_C4(Mmu* mmu, Cpu* cp) {
     word nn = mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8);
@@ -1210,7 +1278,7 @@ void op_C5(Mmu* mmu, Cpu* cp) {
 };
 
 void op_C6(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, ++cp->pc);
+    cp->add8(&cp->reg_A, mmu->read_memory(++cp->pc));
 };
 
 void op_C7(Mmu* mmu, Cpu* cp) {
@@ -1255,7 +1323,7 @@ void op_CD(Mmu* mmu, Cpu* cp) {
 };
 
 void op_CE(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, ++cp->pc + cp->get_c_flag());
+    cp->add8(&cp->reg_A, mmu->read_memory(++cp->pc) + cp->get_c_flag());
 }
 
 void op_CF(Mmu* mmu, Cpu* cp) {
@@ -1297,7 +1365,7 @@ void op_D5(Mmu* mmu, Cpu* cp) {
 };
 
 void op_D6(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, ++cp->pc);
+    cp->sub8(&cp->reg_A, mmu->read_memory(++cp->pc));
 };
 
 void op_D7(Mmu* mmu, Cpu* cp) {
@@ -1382,11 +1450,11 @@ void op_E9(Mmu* mmu, Cpu* cp) {
 };
 
 void op_EA(Mmu* mmu, Cpu* cp) {
-    mmu->write_memory(mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8), cp->reg_A);	// FIXME: it was wrong
+    mmu->write_memory(mmu->read_memory(++cp->pc) | (mmu->read_memory(++cp->pc) << 8), cp->reg_A);
 };
 
 void op_EE(Mmu* mmu, Cpu* cp) {
-    cp->xor8(&cp->reg_A, ++cp->pc);
+    cp->xor8(&cp->reg_A, mmu->read_memory(++cp->pc));
 };
 
 void op_EF(Mmu* mmu, Cpu* cp) {
@@ -1457,7 +1525,7 @@ void op_FF(Mmu* mmu, Cpu* cp) {
 };
 
 void op_CB(Mmu* mmu, Cpu* cp) {
-    int opcode = mmu->address[++(cp->pc)];
+    int opcode = mmu->address[++cp->pc];
 
     byte reg = opcode & 0x07;
     byte bit = opcode & 0x38;
@@ -1488,130 +1556,258 @@ void op_CB(Mmu* mmu, Cpu* cp) {
     }
 };
 
-void op_CB_00(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_B); };
+void op_CB_00(Mmu* mmu, Cpu* cp) { 
+	cp->rlc8(&cp->reg_B); 
+};
 
-void op_CB_01(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_C); };
+void op_CB_01(Mmu* mmu, Cpu* cp) { 
+	cp->rlc8(&cp->reg_C); 
+};
 
-void op_CB_02(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_D); };
+void op_CB_02(Mmu* mmu, Cpu* cp) { 
+	cp->rlc8(&cp->reg_D); 
+};
 
-void op_CB_03(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_E); };
+void op_CB_03(Mmu* mmu, Cpu* cp) { 
+    cp->rlc8(&cp->reg_E);
+};
 
-void op_CB_04(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_H); };
+void op_CB_04(Mmu* mmu, Cpu* cp) { 
+    cp->rlc8(&cp->reg_H);
+};
 
-void op_CB_05(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_L); };
+void op_CB_05(Mmu* mmu, Cpu* cp) { 
+    cp->rlc8(&cp->reg_L);
+};
 
-void op_CB_06(Mmu* mmu, Cpu* cp) { cp->rlc16(&cp->reg_HL); };
+void op_CB_06(Mmu* mmu, Cpu* cp) { 
+    cp->rlc16(&cp->reg_HL);
+};
 
-void op_CB_07(Mmu* mmu, Cpu* cp) { cp->rlc8(&cp->reg_A); };
+void op_CB_07(Mmu* mmu, Cpu* cp) { 
+    cp->rlc8(&cp->reg_A);
+};
 
-void op_CB_08(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_B); };
+void op_CB_08(Mmu* mmu, Cpu* cp) { 
+    cp->rrc8(&cp->reg_B);
+};
 
-void op_CB_09(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_C); };
+void op_CB_09(Mmu* mmu, Cpu* cp) { 
+    cp->rrc8(&cp->reg_C);
+};
 
-void op_CB_0A(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_D); };
+void op_CB_0A(Mmu* mmu, Cpu* cp) { 
+    cp->rrc8(&cp->reg_D);
+};
 
-void op_CB_0B(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_E); };
+void op_CB_0B(Mmu* mmu, Cpu* cp) { 
+    cp->rrc8(&cp->reg_E);
+};
 
-void op_CB_0C(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_H); };
+void op_CB_0C(Mmu* mmu, Cpu* cp) { 
+    cp->rrc8(&cp->reg_H);
+};
 
-void op_CB_0D(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_L); };
+void op_CB_0D(Mmu* mmu, Cpu* cp) { 
+    cp->rrc8(&cp->reg_L);
+};
 
-void op_CB_0E(Mmu* mmu, Cpu* cp) { cp->rrc16(&cp->reg_HL); };
+void op_CB_0E(Mmu* mmu, Cpu* cp) { 
+    cp->rrc16(&cp->reg_HL);
+};
 
-void op_CB_0F(Mmu* mmu, Cpu* cp) { cp->rrc8(&cp->reg_A); };
+void op_CB_0F(Mmu* mmu, Cpu* cp) { 
+    cp->rrc8(&cp->reg_A);
+};
 
-void op_CB_10(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_B); };
+void op_CB_10(Mmu* mmu, Cpu* cp) { 
+    cp->rl8(&cp->reg_B);
+};
 
-void op_CB_11(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_C); };
+void op_CB_11(Mmu* mmu, Cpu* cp) { 
+    cp->rl8(&cp->reg_C);
+};
 
-void op_CB_12(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_D); };
+void op_CB_12(Mmu* mmu, Cpu* cp) { 
+    cp->rl8(&cp->reg_D);
+};
 
-void op_CB_13(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_E); };
+void op_CB_13(Mmu* mmu, Cpu* cp) { 
+    cp->rl8(&cp->reg_E);
+};
 
-void op_CB_14(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_H); };
+void op_CB_14(Mmu* mmu, Cpu* cp) { 
+    cp->rl8(&cp->reg_H);
+};
 
-void op_CB_15(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_L); };
+void op_CB_15(Mmu* mmu, Cpu* cp) { 
+    cp->rl8(&cp->reg_L);
+};
 
-void op_CB_16(Mmu* mmu, Cpu* cp) { cp->rl16(&cp->reg_HL); };
+void op_CB_16(Mmu* mmu, Cpu* cp) { 
+    cp->rl16(&cp->reg_HL);
+};
 
-void op_CB_17(Mmu* mmu, Cpu* cp) { cp->rl8(&cp->reg_A); };
+void op_CB_17(Mmu* mmu, Cpu* cp) { 
+    cp->rl8(&cp->reg_A);
+};
 
-void op_CB_18(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_B); };
+void op_CB_18(Mmu* mmu, Cpu* cp) { 
+    cp->rr8(&cp->reg_B);
+};
 
-void op_CB_19(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_C); };
+void op_CB_19(Mmu* mmu, Cpu* cp) { 
+    cp->rr8(&cp->reg_C);
+};
 
-void op_CB_1A(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_D); };
+void op_CB_1A(Mmu* mmu, Cpu* cp) { 
+    cp->rr8(&cp->reg_D);
+};
 
-void op_CB_1B(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_E); };
+void op_CB_1B(Mmu* mmu, Cpu* cp) { 
+    cp->rr8(&cp->reg_E);
+};
 
-void op_CB_1C(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_H); };
+void op_CB_1C(Mmu* mmu, Cpu* cp) { 
+    cp->rr8(&cp->reg_H);
+};
 
-void op_CB_1D(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_L); };
+void op_CB_1D(Mmu* mmu, Cpu* cp) { 
+    cp->rr8(&cp->reg_L);
+};
 
-void op_CB_1E(Mmu* mmu, Cpu* cp) { cp->rr16(&cp->reg_HL); };
+void op_CB_1E(Mmu* mmu, Cpu* cp) { 
+    cp->rr16(&cp->reg_HL);
+};
 
-void op_CB_1F(Mmu* mmu, Cpu* cp) { cp->rr8(&cp->reg_A); };
+void op_CB_1F(Mmu* mmu, Cpu* cp) { 
+    cp->rr8(&cp->reg_A);
+};
 
-void op_CB_20(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_B); };
+void op_CB_20(Mmu* mmu, Cpu* cp) { 
+    cp->sla8(&cp->reg_B);
+};
 
-void op_CB_21(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_C); };
+void op_CB_21(Mmu* mmu, Cpu* cp) { 
+    cp->sla8(&cp->reg_C);
+};
 
-void op_CB_22(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_D); };
+void op_CB_22(Mmu* mmu, Cpu* cp) { 
+    cp->sla8(&cp->reg_D);
+};
 
-void op_CB_23(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_E); };
+void op_CB_23(Mmu* mmu, Cpu* cp) { 
+    cp->sla8(&cp->reg_E);
+};
 
-void op_CB_24(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_H); };
+void op_CB_24(Mmu* mmu, Cpu* cp) { 
+    cp->sla8(&cp->reg_H);
+};
 
-void op_CB_25(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_L); };
+void op_CB_25(Mmu* mmu, Cpu* cp) { 
+    cp->sla8(&cp->reg_L);
+};
 
-void op_CB_26(Mmu* mmu, Cpu* cp) { cp->sla16(&cp->reg_HL); };
+void op_CB_26(Mmu* mmu, Cpu* cp) { 
+    cp->sla16(&cp->reg_HL);
+};
 
-void op_CB_27(Mmu* mmu, Cpu* cp) { cp->sla8(&cp->reg_A); };
+void op_CB_27(Mmu* mmu, Cpu* cp) { 
+    cp->sla8(&cp->reg_A);
+};
 
-void op_CB_28(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_B); };
+void op_CB_28(Mmu* mmu, Cpu* cp) { 
+    cp->sra8(&cp->reg_B);
+};
 
-void op_CB_29(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_C); };
+void op_CB_29(Mmu* mmu, Cpu* cp) { 
+    cp->sra8(&cp->reg_C);
+};
 
-void op_CB_2A(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_D); };
+void op_CB_2A(Mmu* mmu, Cpu* cp) { 
+    cp->sra8(&cp->reg_D);
+};
 
-void op_CB_2B(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_E); };
+void op_CB_2B(Mmu* mmu, Cpu* cp) { 
+    cp->sra8(&cp->reg_E);
+};
 
-void op_CB_2C(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_H); };
+void op_CB_2C(Mmu* mmu, Cpu* cp) { 
+    cp->sra8(&cp->reg_H);
+};
 
-void op_CB_2D(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_L); };
+void op_CB_2D(Mmu* mmu, Cpu* cp) { 
+    cp->sra8(&cp->reg_L);
+};
 
-void op_CB_2E(Mmu* mmu, Cpu* cp) { cp->sra16(&cp->reg_HL); };
+void op_CB_2E(Mmu* mmu, Cpu* cp) { 
+    cp->sra16(&cp->reg_HL);
+};
 
-void op_CB_2F(Mmu* mmu, Cpu* cp) { cp->sra8(&cp->reg_A); };
+void op_CB_2F(Mmu* mmu, Cpu* cp) { 
+    cp->sra8(&cp->reg_A);
+};
 
-void op_CB_30(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_B); };
+void op_CB_30(Mmu* mmu, Cpu* cp) { 
+    cp->swap8(&cp->reg_B);
+};
 
-void op_CB_31(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_C); };
+void op_CB_31(Mmu* mmu, Cpu* cp) { 
+    cp->swap8(&cp->reg_C);
+};
 
-void op_CB_32(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_D); };
+void op_CB_32(Mmu* mmu, Cpu* cp) { 
+    cp->swap8(&cp->reg_D);
+};
 
-void op_CB_33(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_E); };
+void op_CB_33(Mmu* mmu, Cpu* cp) { 
+    cp->swap8(&cp->reg_E);
+};
 
-void op_CB_34(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_H); };
+void op_CB_34(Mmu* mmu, Cpu* cp) { 
+    cp->swap8(&cp->reg_H);
+};
 
-void op_CB_35(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_L); };
+void op_CB_35(Mmu* mmu, Cpu* cp) { 
+    cp->swap8(&cp->reg_L);
+};
 
-void op_CB_36(Mmu* mmu, Cpu* cp) { cp->swap16(&cp->reg_HL); };
+void op_CB_36(Mmu* mmu, Cpu* cp) { 
+    cp->swap16(&cp->reg_HL);
+};
 
-void op_CB_37(Mmu* mmu, Cpu* cp) { cp->swap8(&cp->reg_A); };
+void op_CB_37(Mmu* mmu, Cpu* cp) { 
+    cp->swap8(&cp->reg_A);
+};
 
-void op_CB_38(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_B); };
+void op_CB_38(Mmu* mmu, Cpu* cp) { 
+    cp->srl8(&cp->reg_B);
+};
 
-void op_CB_39(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_C); };
+void op_CB_39(Mmu* mmu, Cpu* cp) { 
+    cp->srl8(&cp->reg_C);
+};
 
-void op_CB_3A(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_D); };
+void op_CB_3A(Mmu* mmu, Cpu* cp) { 
+    cp->srl8(&cp->reg_D);
+};
 
-void op_CB_3B(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_E); };
+void op_CB_3B(Mmu* mmu, Cpu* cp) { 
+    cp->srl8(&cp->reg_E);
+};
 
-void op_CB_3C(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_H); };
+void op_CB_3C(Mmu* mmu, Cpu* cp) { 
+    cp->srl8(&cp->reg_H);
+};
 
-void op_CB_3D(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_L); };
+void op_CB_3D(Mmu* mmu, Cpu* cp) { 
+    cp->srl8(&cp->reg_L);
+};
 
-void op_CB_3E(Mmu* mmu, Cpu* cp) { cp->srl16(&cp->reg_HL); };
+void op_CB_3E(Mmu* mmu, Cpu* cp) { 
+    cp->srl16(&cp->reg_HL);
+};
 
-void op_CB_3F(Mmu* mmu, Cpu* cp) { cp->srl8(&cp->reg_A); };
+void op_CB_3F(Mmu* mmu, Cpu* cp) { 
+    cp->srl8(&cp->reg_A);
+};
