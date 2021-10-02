@@ -587,7 +587,7 @@ void op_28(Mmu* mmu, Cpu* cp) {
 
 void op_29(Mmu* mmu, Cpu* cp) { 
     // ADD HL, HL
-	cp->add16(&cp->reg_HL, cp->reg_HL.get()); 
+	cp->add16(&cp->reg_HL, cp->reg_HL.get());   // FIXME: can be wrong
 };
 
 void op_2A(Mmu* mmu, Cpu* cp) {
@@ -980,7 +980,7 @@ void op_7E(Mmu* mmu, Cpu* cp) {
 };
 
 void op_7F(Mmu* mmu, Cpu* cp) { 
-	cp->reg_A = cp->reg_A; 
+	cp->reg_A = cp->reg_A;
 };
 
 void op_80(Mmu* mmu, Cpu* cp) {
@@ -1468,6 +1468,7 @@ void op_F0(Mmu* mmu, Cpu* cp) {
 
 void op_F1(Mmu* mmu, Cpu* cp) { 
 	cp->pop16(&cp->reg_AF); 
+    cp->reg_F &= 0xF0;  // F lowest nibble does not matter
 };
 
 void op_F2(Mmu* mmu, Cpu* cp) {
