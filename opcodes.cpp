@@ -553,26 +553,26 @@ void op_26(Mmu* mmu, Cpu* cp) {
 };
 
 void op_27(Mmu* mmu, Cpu* cp) {
-    word a = cp->reg_A;
+    
     if (!cp->get_n_flag()) {
-        if (cp->get_h_flag() || (a & 0x0f) > 0x09) {
-            a += 0x6;
+        if (cp->get_h_flag() || (cp->reg_A & 0x0f) > 0x09) {
+            cp->reg_A += 0x6;
         }
-        if (cp->get_c_flag() || a > 0x99) {
-            a += 0x60;
+        if (cp->get_c_flag() || cp->reg_A > 0x99) {
+            cp->reg_A += 0x60;
+            cp->set_c_flag(1);
         }
     } else {
         if (cp->get_c_flag()) {
-            a -= 0x60;
+            cp->reg_A -= 0x60;
+            cp->set_c_flag(1);
         }
         if (cp->get_h_flag()) {
-            a -= 0x6;
+            cp->reg_A -= 0x6;
         }
     }
-    cp->reg_A = a;
 
     cp->set_h_flag(0);
-    cp->set_c_flag(a >= 0x100);
     cp->set_z_flag(cp->reg_A == 0);
 };
 
