@@ -52,8 +52,14 @@ void Cpu::emulate_cycle() {
 
 void Cpu::execute_opcode() {
     //debug();
-    if(mmu->read_memory(0xff02) == 0x81)
-        printf("-> %02x\n", mmu->read_memory(0xff01));
+
+    if(mmu->read_memory(0xff02) == 0x81) {
+        printf("%c ", mmu->read_memory(0xff01));
+        mmu->address[0xff02] = 0;
+    }
+    if(mmu->address[0xff00] == 0x10)
+        printf("%02x\n",mmu->address[0xff00]);
+
 
     //printf("opcode: %02x\n", opcode);
      if(opcode != 0xCB)

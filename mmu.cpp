@@ -35,7 +35,7 @@ Mmu::Mmu(Cartridge *c) {
     address[0xFF05] = 0x00;  // TIMA
     address[0xFF06] = 0x00;  // TMA
     address[0xFF07] = 0x00;  // TAC
-    //address[0xFF0F] = 0xE1;  // FIXME: IF
+    address[0xFF0F] = 0xE1;  // FIXME: IF
     address[0xFF10] = 0x80;  // NR10
     address[0xFF11] = 0xBF;  // NR11
     address[0xFF12] = 0xF3;  // NR12
@@ -55,10 +55,10 @@ Mmu::Mmu(Cartridge *c) {
     address[0xFF25] = 0xF3;  // NR51
     address[0xFF26] = 0xF1;  // GB
     address[0xFF40] = 0x91;  // LCDC
-    address[0xFF41] = 0x85;  // FIXME: STAT
+    address[0xFF41] = 0x85;  // STAT
     address[0xFF42] = 0x00;  // SCY
     address[0xFF43] = 0x00;  // SCX
-    address[0xFF44] = 0x00;  // FIXME: LY
+    address[0xFF44] = 0x00;  // LY
     address[0xFF45] = 0x00;  // LYC
     address[0xFF47] = 0xFC;  // BGP
     address[0xFF48] = 0xFF;  // OBP0
@@ -153,7 +153,6 @@ void Mmu::write_memory(word addr, byte data) {
     }
 
     else if (addr == 0xFF07) {
-		// TODO: are the () correct? changed while refactoring
         if (TAC.get() != (data & 0x03)) {
             TIMA.set(0);
         }

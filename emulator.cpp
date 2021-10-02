@@ -186,7 +186,7 @@ void Emulator::set_lcd_status() {
 
 void Emulator::update_timers() {
     
-    divider_counter += cpu->last_clock;
+    divider_counter += cpu->last_clock * 4;
 
     if (divider_counter >= 256) {
         divider_counter = 0;
@@ -195,7 +195,7 @@ void Emulator::update_timers() {
 
     // check if clock enabled
     if (mmu->TAC.get() & (1 << 2)) {
-        time_counter -= cpu->last_clock;
+        time_counter -= cpu->last_clock * 4;
 
         // enough Cpu clock cycles have happened to update the timer
         if (time_counter <= 0) {
