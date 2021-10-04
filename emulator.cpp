@@ -11,6 +11,7 @@ Emulator::Emulator(const char *filename) {
 
 void Emulator::run() {
     cpu->emulate_cycle();
+    update_timers();
     update_graphics();
     execute_interrupts();
 
@@ -81,7 +82,7 @@ void Emulator::key_pressed(int key) {
     }
     
     mmu->joypad_state &= ~(1 << key);
-
+    
     byte res = mmu->read_memory(0xFF00);
     bool req_interrupt = false;
 
@@ -92,8 +93,8 @@ void Emulator::key_pressed(int key) {
     // directional buttons
     else if (key <= 3 && !(res & (1 << 4))) {
         req_interrupt = true;
+    
     }
-
     if (req_interrupt && !previously_unset) {
         request_interrupt(INTERRUPT_JOYPAD);
     }

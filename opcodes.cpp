@@ -239,7 +239,7 @@ void initialize_optable() {
     optable[0xD9] = &op_D9; cycle_table[0xD9] = {4, 0};
     optable[0xDA] = &op_DA; cycle_table[0xDA] = {3, 1};
     optable[0xDC] = &op_DC; cycle_table[0xDC] = {3, 3};
-    optable[0xDE] = &op_DC; cycle_table[0xDE] = {2, 0};  // TODO: function missing
+    optable[0xDE] = &op_DE; cycle_table[0xDE] = {2, 0};
     optable[0xDF] = &op_DF; cycle_table[0xDF] = {4, 0};
 
     optable[0xE0] = &op_E0; cycle_table[0xE0] = {3, 0};
@@ -360,7 +360,7 @@ void op_02(Mmu* mmu, Cpu* cp) {
 
 void op_03(Mmu* mmu, Cpu* cp) {
     // INC BC 
-	cp->inc16(&cp->reg_BC);
+    cp->reg_BC++;
 };
 
 void op_04(Mmu* mmu, Cpu* cp) {
@@ -405,8 +405,8 @@ void op_0A(Mmu* mmu, Cpu* cp) {
 };
 
 void op_0B(Mmu* mmu, Cpu* cp) { 
-    //  DEC BC
-	cp->dec16(&cp->reg_BC);
+    // DEC BC
+    cp->reg_BC--;
 };
 
 void op_0C(Mmu* mmu, Cpu* cp) {
@@ -447,7 +447,7 @@ void op_12(Mmu* mmu, Cpu* cp) {
 
 void op_13(Mmu* mmu, Cpu* cp) {
     // INC DE 
-	cp->inc16(&cp->reg_DE); 
+	cp->reg_DE++; 
 };
 
 void op_14(Mmu* mmu, Cpu* cp) {
@@ -488,7 +488,7 @@ void op_1A(Mmu* mmu, Cpu* cp) {
 
 void op_1B(Mmu* mmu, Cpu* cp) { 
     // DEC DE
-	cp->dec16(&cp->reg_DE); 
+    cp->reg_DE--;
 };
 
 void op_1C(Mmu* mmu, Cpu* cp) { 
@@ -534,7 +534,7 @@ void op_22(Mmu* mmu, Cpu* cp) {
 
 void op_23(Mmu* mmu, Cpu* cp) { 
     // INC HL
-	cp->inc16(&cp->reg_HL); 
+	cp->reg_HL++; 
 };
 
 void op_24(Mmu* mmu, Cpu* cp) { 
@@ -587,7 +587,7 @@ void op_28(Mmu* mmu, Cpu* cp) {
 
 void op_29(Mmu* mmu, Cpu* cp) { 
     // ADD HL, HL
-	cp->add16(&cp->reg_HL, cp->reg_HL.get());   // FIXME: can be wrong
+	cp->add16(&cp->reg_HL, cp->reg_HL.get());
 };
 
 void op_2A(Mmu* mmu, Cpu* cp) {
@@ -597,7 +597,7 @@ void op_2A(Mmu* mmu, Cpu* cp) {
 
 void op_2B(Mmu* mmu, Cpu* cp) { 
     // DEC HL
-	cp->dec16(&cp->reg_HL);
+	cp->reg_HL--;
 };
 
 void op_2C(Mmu* mmu, Cpu* cp) { 
@@ -1401,6 +1401,11 @@ void op_DC(Mmu* mmu, Cpu* cp) {
         cp->store_pc_stack();
         cp->pc = nn - 1;
     }
+};
+
+void op_DE(Mmu* mmu, Cpu* cp) {
+    // SBC N
+    cp->sub8(&cp->reg_A, mmu->read_memory(++cp->pc) + cp->get_c_flag());
 };
 
 void op_DF(Mmu* mmu, Cpu* cp) {

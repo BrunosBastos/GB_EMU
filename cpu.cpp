@@ -29,7 +29,7 @@ void Cpu::emulate_cycle() {
     // get opcode
     opcode = mmu->read_memory(pc);
     last_clock = cycle_table[opcode].cycles;
-
+    
     // decode and execute op
     execute_opcode();
     total_clock += last_clock;      // ig total_clock is not used but...
@@ -52,14 +52,18 @@ void Cpu::emulate_cycle() {
 
 void Cpu::execute_opcode() {
     //debug();
-
+    /*
     if(mmu->read_memory(0xff02) == 0x81) {
         printf("%c ", mmu->read_memory(0xff01));
         mmu->address[0xff02] = 0;
     }
     if(mmu->address[0xff00] == 0x10)
         printf("%02x\n",mmu->address[0xff00]);
-
+    if(pc == 0x50) {
+        printf("Timer interrupt\n");
+        exit(1);
+    }
+    */
 
     //printf("opcode: %02x\n", opcode);
      if(opcode != 0xCB)
@@ -149,14 +153,6 @@ void Cpu::debug_map_addr() {
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-
-void Cpu::inc16(PairRegister *reg_16) {
-    (*reg_16)++;
-};
-
-void Cpu::dec16(PairRegister *reg_16) {
-    (*reg_16)--;
-};
 
 void Cpu::swap8(byte *reg_8) {
     *reg_8 = (*reg_8 << 4) | (*reg_8 >> 4);

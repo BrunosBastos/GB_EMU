@@ -74,7 +74,6 @@ class Cpu {
         void ret();
         void store_pc_stack();
         
-
         void add8(byte *op1, byte op2);
         void sub8(byte *op1, byte op2);
         void and8(byte *op1, byte op2);
@@ -85,12 +84,8 @@ class Cpu {
         void dec8(byte *op1);
 
         void add16(PairRegister *op1, word op2);
-        void inc16(PairRegister *op1);
-        void dec16(PairRegister *op1);
-
         void push16(PairRegister *r16);
         void pop16(PairRegister *r16); 
-
 
         void set_z_flag(bool value);
         void set_n_flag(bool value);
