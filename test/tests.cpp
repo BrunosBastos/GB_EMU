@@ -1,5 +1,13 @@
+
+
 #include "test_opcodes.cpp"
+#include "test_cpu.cpp"
+
 #include <gtest/gtest.h>
+
+Cartridge *c = new Cartridge("../roms/tetris.gb");
+Mmu *mmu = new Mmu(c);
+Cpu *cpu = new Cpu(mmu);
 
  
 int main(int argc, char **argv) {

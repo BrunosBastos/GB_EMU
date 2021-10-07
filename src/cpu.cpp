@@ -225,8 +225,8 @@ void Cpu::rl8(byte *reg_8) {
 };
 
 void Cpu::rrc8(byte *reg_8) {
-    set_h_flag(0);
     set_n_flag(0);
+    set_h_flag(0);
     set_c_flag(*reg_8 & 0x01);
 
     byte carry = get_c_flag();
@@ -249,7 +249,7 @@ void Cpu::rr8(byte *reg_8) {
 void Cpu::sla8(byte *reg_8) {
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag((*reg_8 & 0x80) >> 7);
+    set_c_flag(*reg_8 & 0x80);
 
     *reg_8 <<= 1;
 
