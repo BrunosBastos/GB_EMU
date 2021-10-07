@@ -92,8 +92,7 @@ void Emulator::key_pressed(int key) {
     }
     // directional buttons
     else if (key <= 3 && !(res & (1 << 4))) {
-        req_interrupt = true;
-    
+        req_interrupt = true; 
     }
     if (req_interrupt && !previously_unset) {
         request_interrupt(INTERRUPT_JOYPAD);

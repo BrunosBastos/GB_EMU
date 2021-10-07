@@ -124,7 +124,6 @@ byte Mmu::get_joypad_state() {
 
 void Mmu::write_memory(word addr, byte data) {
 
-    
     if ((addr >= 0x0000 && addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF)) {
         mbc->write(addr, data);
     }
@@ -149,7 +148,6 @@ void Mmu::write_memory(word addr, byte data) {
     // reset the divider register
     else if (addr == 0xFF04) {
         DIV.set(0);
-        // address[0xFF04] = 0;
     }
 
     else if (addr == 0xFF07) {

@@ -51,7 +51,6 @@ void Cpu::emulate_cycle() {
 };
 
 void Cpu::execute_opcode() {
-    //debug();
     /*
     if(mmu->read_memory(0xff02) == 0x81) {
         printf("%c ", mmu->read_memory(0xff01));
@@ -73,15 +72,35 @@ void Cpu::execute_opcode() {
 
     if (pc == 0x40) {
         n_op++;
+        debug();
+        if(n_op > 130) {
+            if(reg_HL.get() != 0xffa8) {
+                printf("hl : %04x\n", reg_HL.get());
+                exit(1);
+            }
+        }
         //printf("%i\n", n_op);  
         //debug_tile_addr();
         //debug_map_addr();
         //if (n_op >= 40 && n_op < 100 && n_op % 10 == 0)
             //debug_dump_memory();
     }
+
+    if(true) {
+        //printf("ff80 : %02x\n", mmu->read_memory(0xff80));
+        /*
+        10 >
+        20 <
+        40 ^
+        80 v
+        a 02
+        s 01
+        E 08
+        */
+    }
     
+    //debug();
     if (n_op == 128) {
-        //debug();
         // FILE *fp;
         // fp = fopen("opcodes_debug.txt", "w");
 

@@ -151,7 +151,7 @@ int main() {
     fclose(fp);
     initialize_optable();
 
-    Emulator *emu = new Emulator("./roms/tetris.gb");
+    Emulator *emu = new Emulator("../roms/tetris.gb");
    
     bool running = true;
     while (running) {
