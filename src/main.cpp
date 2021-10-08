@@ -159,7 +159,7 @@ int main() {
 
         int framerate = 60;
         float cycles_per_frame = emu->clock_speed / framerate;
-		float time_between_frames = 1000 / framerate;
+		float time_between_frames = 2500 / framerate;
         int current_cycle = 0;
 
 
