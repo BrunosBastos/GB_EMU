@@ -1543,7 +1543,7 @@ void op_CB(Mmu* mmu, Cpu* cp) {
     int opcode = mmu->address[++cp->pc];
 
     byte reg = opcode & 0x07;
-    byte bit = opcode & 0x38;
+    byte bit = (opcode & 0x38) >> 3;
     cp->last_clock = 3;		//CB takes 1 cycle and the others take 2 cycles
 							//unless it is a 16 bit operation in which the
 							// cycles are incremented in the functions

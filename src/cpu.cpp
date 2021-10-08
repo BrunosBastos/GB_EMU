@@ -73,12 +73,12 @@ void Cpu::execute_opcode() {
     if (pc == 0x40) {
         n_op++;
         debug();
-        if(n_op > 130) {
-            if(reg_HL.get() != 0xffa8) {
-                printf("hl : %04x\n", reg_HL.get());
-                exit(1);
-            }
-        }
+        // if(n_op > 130) {
+        //     if(reg_HL.get() != 0xffa8) {
+        //         printf("hl : %04x\n", reg_HL.get());
+        //         exit(1);
+        //     }
+        // }
         //printf("%i\n", n_op);  
         //debug_tile_addr();
         //debug_map_addr();

@@ -205,7 +205,45 @@ TEST(CpuTest, test_srl8) {
 };
 
 TEST(CpuTest, test_bit) {
-    ASSERT_TRUE(true);
+    bool prev_c_flag;
+
+    cpu->reg_B = 0x01;
+    prev_c_flag = cpu->get_c_flag();
+    cpu->bit(&cpu->reg_B, 0);
+
+    ASSERT_TRUE(!cpu->get_z_flag());
+    ASSERT_TRUE(!cpu->get_n_flag());
+    ASSERT_TRUE(cpu->get_h_flag());
+    ASSERT_TRUE(cpu->get_c_flag() == prev_c_flag);
+
+    cpu->reg_B = 0x01;
+    prev_c_flag = cpu->get_c_flag();
+    cpu->bit(&cpu->reg_B, 1);
+
+    ASSERT_TRUE(cpu->get_z_flag());
+    ASSERT_TRUE(!cpu->get_n_flag());
+    ASSERT_TRUE(cpu->get_h_flag());
+    ASSERT_TRUE(cpu->get_c_flag() == prev_c_flag);
+
+    cpu->reg_BC.set(0x8000);
+    mmu->address[0x8000] = 0x01;
+    prev_c_flag = cpu->get_c_flag();
+    cpu->bit(&cpu->reg_BC, 0);
+
+    ASSERT_TRUE(!cpu->get_z_flag());
+    ASSERT_TRUE(!cpu->get_n_flag());
+    ASSERT_TRUE(cpu->get_h_flag());
+    ASSERT_TRUE(cpu->get_c_flag() == prev_c_flag);
+
+    cpu->reg_BC.set(0x8000);
+    mmu->address[0x8000] = 0x01;
+    prev_c_flag = cpu->get_c_flag();
+    cpu->bit(&cpu->reg_BC, 1);
+
+    ASSERT_TRUE(cpu->get_z_flag());
+    ASSERT_TRUE(!cpu->get_n_flag());
+    ASSERT_TRUE(cpu->get_h_flag());
+    ASSERT_TRUE(cpu->get_c_flag() == prev_c_flag);
 };
 
 TEST(CpuTest, test_set) {
