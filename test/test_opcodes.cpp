@@ -616,3 +616,275 @@ TEST(OpcodesTest, test_op_CA) {
     op_CA(mmu, cpu);
     ASSERT_TRUE(cpu->pc == 0x102);
 };
+
+TEST(OpcodesTest, test_op_CC) {
+    // CALL Z, NN
+    cpu->set_z_flag(1);
+    cpu->sp = 0xFFFF;
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[cpu->pc + 2] = 0x10;
+    op_CC(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x1020 - 1);
+    ASSERT_TRUE(cpu->sp == 0xFFFF - 2);
+    ASSERT_TRUE(mmu->address[cpu->sp] == 0x03);
+    ASSERT_TRUE(mmu->address[cpu->sp + 1] == 0x01);
+
+    cpu->set_z_flag(0);
+    cpu->sp = 0xFFFF;
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[cpu->pc + 2] = 0x10;
+    op_CC(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x102);
+    ASSERT_TRUE(cpu->sp == 0xFFFF);
+};
+
+TEST(OpcodesTest, test_op_CD) {
+    // CALL NN
+    cpu->sp = 0xFFFF;
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[cpu->pc + 2] = 0x10;
+    op_CD(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x1020 - 1);
+    ASSERT_TRUE(cpu->sp == 0xFFFF - 2);
+    ASSERT_TRUE(mmu->address[cpu->sp] == 0x03);
+    ASSERT_TRUE(mmu->address[cpu->sp + 1] == 0x01);
+};
+
+TEST(OpcodesTest, test_op_CF) {
+    // RST 08
+    cpu->pc = 0x100;
+    op_CF(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x07);
+};
+
+TEST(OpcodesTest, test_op_D0) {
+    // RET NZ
+    cpu->set_c_flag(0);
+    cpu->sp = 0x10;
+    cpu->pc = 0;
+    mmu->address[cpu->sp] = 0x00;
+    mmu->address[cpu->sp + 1] = 0x01;
+    op_D0(mmu, cpu);
+    ASSERT_TRUE(cpu->sp == 0x12);
+    ASSERT_TRUE(cpu->pc == 0xFF);
+
+    cpu->set_c_flag(1);
+    op_D0(mmu, cpu);
+    ASSERT_TRUE(cpu->sp == 0x12);
+    ASSERT_TRUE(cpu->pc == 0xFF);
+};
+
+TEST(OpcodesTest, test_op_D2) {
+    // JP NC
+    cpu->set_c_flag(0);
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[cpu->pc + 2] = 0x10;
+    op_D2(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x1020 - 1);
+
+    cpu->set_c_flag(1);
+    cpu->pc = 0x100;
+    op_D2(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x102);
+};
+
+TEST(OpcodesTest, test_op_D4) {
+    // CALL NC, NN
+    cpu->set_c_flag(0);
+    cpu->sp = 0xFFFF;
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[cpu->pc + 2] = 0x10;
+    op_D4(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x1020 - 1);
+    ASSERT_TRUE(cpu->sp == 0xFFFF - 2);
+    ASSERT_TRUE(mmu->address[cpu->sp] == 0x03);
+    ASSERT_TRUE(mmu->address[cpu->sp + 1] == 0x01);
+
+    cpu->set_c_flag(1);
+    cpu->sp = 0xFFFF;
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[cpu->pc + 2] = 0x10;
+    op_D4(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x102);
+    ASSERT_TRUE(cpu->sp == 0xFFFF);
+};
+
+TEST(OpcodesTest, test_op_D7) {
+    // RST 10
+    cpu->pc = 0x100;
+    op_D7(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x0F);
+};
+
+TEST(OpcodesTest, test_op_D8) {
+    // RET C
+    cpu->set_c_flag(1);
+    cpu->sp = 0x10;
+    cpu->pc = 0;
+    mmu->address[cpu->sp] = 0x00;
+    mmu->address[cpu->sp + 1] = 0x01;
+    op_D8(mmu, cpu);
+    ASSERT_TRUE(cpu->sp == 0x12);
+    ASSERT_TRUE(cpu->pc == 0xFF);
+
+    cpu->set_c_flag(0);
+    op_D8(mmu, cpu);
+    ASSERT_TRUE(cpu->sp == 0x12);
+    ASSERT_TRUE(cpu->pc == 0xFF);
+};
+
+TEST(OpcodesTest, test_op_DA) {
+    // JP C
+    cpu->set_c_flag(1);
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[cpu->pc + 2] = 0x10;
+    op_DA(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x1020 - 1);
+
+    cpu->set_c_flag(0);
+    cpu->pc = 0x100;
+    op_DA(mmu, cpu);
+    ASSERT_TRUE(cpu->pc == 0x102);
+};
+
+TEST(OpcodesTest, test_op_DF) {
+    // RST 18
+    cpu->pc = 0x100;
+    op_DF(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x17);
+};
+
+TEST(OpcodesTest, test_op_E0) {
+    // LDH A
+    cpu->pc = 0x100;
+    cpu->reg_A = 0x20;
+    mmu->address[cpu->pc + 1] = 0x10;
+    mmu->address[0xff00 + 0x10] = 0;
+    op_E0(mmu, cpu);
+    ASSERT_EQ(mmu->address[0xff10], 0x20);
+};
+
+TEST(OpcodesTest, test_op_E2) {
+    // LD (C), A
+    cpu->pc = 0x100;
+    cpu->reg_A = 0x20;
+    cpu->reg_C = 0x10;
+    mmu->address[cpu->pc + 1] = 0x10;
+    mmu->address[0xff00 + cpu->reg_C] = 0;
+    op_E2(mmu, cpu);
+    ASSERT_EQ(mmu->address[0xff00 + cpu->reg_C], 0x20);
+};
+
+TEST(OpcodesTest, test_op_E7) {
+    // RST 20
+    cpu->pc = 0x100;
+    op_E7(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x1F);
+};
+
+TEST(OpcodesTest, test_op_E8) {
+    // ADD SP, N TODO: more tests for this opcode
+    cpu->pc = 0x100;
+    mmu->address[cpu->pc + 1] = 0;
+    cpu->sp = 0xFFFE;
+    op_E8(mmu, cpu);
+    ASSERT_EQ(cpu->sp, 0xFFFE);
+    ASSERT_TRUE(!cpu->get_h_flag());
+    ASSERT_TRUE(!cpu->get_c_flag());
+
+    mmu->address[cpu->pc + 1] = 0xFF;
+    cpu->sp = 0xFFFE;
+    op_E8(mmu, cpu);
+    ASSERT_EQ(cpu->sp, 0xFFFD);
+    ASSERT_TRUE(cpu->get_h_flag());
+    ASSERT_TRUE(cpu->get_c_flag());
+};
+
+TEST(OpcodesTest, test_op_E9) {
+    // JP HL
+    cpu->pc = 0x100;
+    cpu->reg_HL.set(0x8000);
+    op_E9(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x8000 - 1);
+};
+
+TEST(OpcodesTest, test_op_EA) {
+    // LD (NN), A
+    cpu->pc = 0x100;
+    cpu->reg_A = 0x20;
+    mmu->address[cpu->pc + 1] = 0x01;
+    mmu->address[cpu->pc + 2] = 0x80;
+    op_EA(mmu, cpu);
+    ASSERT_EQ(mmu->address[0x8001], 0x20);
+};
+
+TEST(OpcodesTest, test_op_EF) {
+    // RST 28
+    cpu->pc = 0x100;
+    op_EF(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x27);
+};
+
+TEST(OpcodesTest, test_op_F0) {
+    // LD A, (N)
+    cpu->pc = 0x100;
+    cpu->reg_A = 0;
+    mmu->address[cpu->pc + 1] = 0x20;
+    mmu->address[0xff00 + 0x20] = 0x30;
+    op_F0(mmu, cpu);
+    ASSERT_EQ(cpu->reg_A, 0x30);
+};
+
+
+TEST(OpcodesTest, test_op_F2) {
+    // LD A, (C)
+    cpu->pc = 0x100;
+    cpu->reg_A = 0;
+    cpu->reg_C = 0x20;
+    mmu->address[0xff00 + 0x20] = 0x30;
+    op_F2(mmu, cpu);
+    ASSERT_EQ(cpu->reg_A, 0x30);
+};
+
+TEST(OpcodesTest, test_op_F7) {
+    // RST 30
+    cpu->pc = 0x100;
+    op_F7(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x2F);
+};
+
+// TODO: F8
+
+TEST(OpcodesTest, test_op_F9) {
+    // LD SP, HL
+    cpu->sp = 0;
+    cpu->reg_HL.set(0x8000);
+    op_F9(mmu, cpu);
+    ASSERT_EQ(cpu->sp, 0x8000);
+};
+
+TEST(OpcodesTest, test_op_FA) {
+    // LD A, (NN)
+    cpu->pc = 0x100;
+    cpu->reg_A = 0;
+    mmu->address[cpu->pc + 1] = 0x01;
+    mmu->address[cpu->pc + 2] = 0x80;
+    mmu->address[0x8001] = 0x30;
+    op_FA(mmu, cpu);
+    ASSERT_EQ(cpu->reg_A, 0x30);
+};
+
+TEST(OpcodesTest, test_op_FF) {
+    // RST 38
+    cpu->pc = 0x100;
+    op_FF(mmu, cpu);
+    ASSERT_EQ(cpu->pc, 0x37);
+};
+
