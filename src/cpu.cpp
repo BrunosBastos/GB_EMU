@@ -26,6 +26,11 @@ Cpu::Cpu(Mmu* mmu) {
 };
 
 void Cpu::emulate_cycle() {
+
+    if(halted) {
+        last_clock = cycle_table[0x76].cycles;
+        return;
+    }
     // get opcode
     opcode = mmu->read_memory(pc);
     last_clock = cycle_table[opcode].cycles;
@@ -35,6 +40,8 @@ void Cpu::emulate_cycle() {
     total_clock += last_clock;      // ig total_clock is not used but...
 
     pc++;
+
+    // debug();
 
     if (pending_interrupt_disabled) {
         if (mmu->read_memory(pc - 1) != 0xF3) {
@@ -72,7 +79,7 @@ void Cpu::execute_opcode() {
 
     if (pc == 0x40) {
         n_op++;
-        debug();
+        //debug();
         // if(n_op > 130) {
         //     if(reg_HL.get() != 0xffa8) {
         //         printf("hl : %04x\n", reg_HL.get());
@@ -115,23 +122,44 @@ void Cpu::execute_opcode() {
         // fclose(fp);
         //exit(1);
     }
+
+    // if(opcode == 0x27) {
+    //     for (auto it = ops.begin(); it != ops.end(); ++it)
+    //         printf("%02x \n", *it);
+
+    //     for (auto pt = ops_cb.begin(); pt != ops_cb.end(); ++pt)
+    //         printf("cb %02x \n", *pt);
+    //     exit(1);
+    // }
+    
+    // FILE *fp;
+    // fp = fopen("bad_daa.txt", "a+");
+    // if(opcode == 0x27) fprintf(fp, " in %04x \n", reg_AF.get());
+    (*optable[opcode])(mmu, this);
     
 
-    (*optable[opcode])(mmu, this);
+    // if(opcode == 0x27) fprintf(fp, "out %04x \n", reg_AF.get());
+    // fclose(fp);
 };
 
 
 void Cpu::debug() {
+    // FILE *fp;
+    // fp = fopen("daa.txt", "a+");
+    // fprintf(fp, "\npc: %04x\n", pc);
+    // fprintf(fp, "\topcode: %02x  last_clock: %2i\n", opcode, last_clock);
+    // fprintf(fp, "\taf: %02x%02x    lcdc: %02x\n", reg_A, reg_F, mmu->LCDC.get());
+    // fprintf(fp, "\tbc: %02x%02x    stat: %02x\n", reg_B, reg_C, mmu->STAT.get());
+    // fprintf(fp, "\tde: %02x%02x    ly:   %02x  (%3i)\n", reg_D, reg_E, mmu->LY.get(), mmu->LY.get());
+    // fprintf(fp, "\thl: %02x%02x    ie:   %02x\n", reg_H, reg_L,  mmu->IE.get());
+    // fprintf(fp, "\tsp: %04x    if:   %02x\n", sp, mmu->IF.get());
+    // fclose(fp);
+
     FILE *fp;
-    fp = fopen("debug.txt", "a+");
-    fprintf(fp, "\npc: %04x\n", pc);
-    fprintf(fp, "\topcode: %02x  last_clock: %2i\n", opcode, last_clock);
-    fprintf(fp, "\taf: %02x%02x    lcdc: %02x\n", reg_A, reg_F, mmu->LCDC.get());
-    fprintf(fp, "\tbc: %02x%02x    stat: %02x\n", reg_B, reg_C, mmu->STAT.get());
-    fprintf(fp, "\tde: %02x%02x    ly:   %02x  (%3i)\n", reg_D, reg_E, mmu->LY.get(), mmu->LY.get());
-    fprintf(fp, "\thl: %02x%02x    ie:   %02x\n", reg_H, reg_L,  mmu->IE.get());
-    fprintf(fp, "\tsp: %04x    if:   %02x\n", sp, mmu->IF.get());
-    fprintf(fp, "\t&df82: %02x\n", mmu->address[0xdf82]);
+    fp = fopen("daa.txt", "a+");
+    fprintf(fp, "\npc: %04x  mmu[ff44]: %02x\n", pc, mmu->read_memory(0xff44));
+    fprintf(fp, "\topcode: %02x  sp: %04x\n", opcode, sp);
+    fprintf(fp, "\taf: %02x%02x  bc: %02x%02x  de: %02x%02x  hl: %02x%02x\n", reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L);
     fclose(fp);
 };
 

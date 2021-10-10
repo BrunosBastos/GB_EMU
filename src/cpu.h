@@ -37,6 +37,7 @@ class Cpu {
         bool interrupt_master;
         bool pending_interrupt_disabled;
         bool pending_interrupt_enabled;
+        bool halted = false;
 
         void emulate_cycle();
         void execute_opcode();
