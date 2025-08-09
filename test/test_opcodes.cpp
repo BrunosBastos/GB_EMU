@@ -1,25 +1,27 @@
 #include "tests.h"
 
 
-class OpcodesTest : public ::testing::Environment {
+class OpcodesTest : public ::testing::Test {
    public:
     ~OpcodesTest() override {}
 
-    // Override this to define how to set up the environment.
+    Cartridge *c;
+    Mmu *mmu;
+    Cpu *cpu;
+
     void SetUp() override {
-        Cartridge *c = new Cartridge("../roms/tetris.gb");
+        c = new Cartridge("/mnt/c/Users/Utilizador/Desktop/projects/GB_EMU/test/test_roms/cpu_instrs/cpu_instrs.gb");
         mmu = new Mmu(c);
         cpu = new Cpu(mmu);
     }
 
-    // Override this to define how to tear down the environment.
     void TearDown() override {
         free(mmu);
         free(cpu);
     }
 };
 
-TEST(OpcodesTest, test_op_01) {
+TEST_F(OpcodesTest, test_op_01) {
     // LD BC, NN
     cpu->reg_BC.set(0);
     mmu->address[cpu->pc + 1] = 0x30;
@@ -30,7 +32,7 @@ TEST(OpcodesTest, test_op_01) {
     ASSERT_TRUE(cpu->reg_BC.get() == 0x2030);
 };
 
-TEST(OpcodesTest, test_op_02) {
+TEST_F(OpcodesTest, test_op_02) {
     // LC (BC), A
     cpu->reg_BC.set(0x8000);
     mmu->address[cpu->reg_BC.get()] = 0;
@@ -41,7 +43,7 @@ TEST(OpcodesTest, test_op_02) {
     ASSERT_TRUE(mmu->address[cpu->reg_BC.get()] == 0x55);
 };
 
-TEST(OpcodesTest, test_op_03) {
+TEST_F(OpcodesTest, test_op_03) {
     // INC BC
     cpu->reg_BC.set(0);
 
@@ -57,7 +59,7 @@ TEST(OpcodesTest, test_op_03) {
     ASSERT_TRUE(cpu->reg_BC.get() == 0x0100);
 };
 
-TEST(OpcodesTest, test_op_06) {
+TEST_F(OpcodesTest, test_op_06) {
     // LD B, N
     const byte n = 0x10;
     cpu->reg_B = 0;
@@ -68,7 +70,7 @@ TEST(OpcodesTest, test_op_06) {
     ASSERT_TRUE(cpu->reg_B == n);
 };
 
-TEST(OpcodesTest, test_op_07) {
+TEST_F(OpcodesTest, test_op_07) {
     // RLCA
 
     op_07(mmu, cpu);
@@ -76,7 +78,7 @@ TEST(OpcodesTest, test_op_07) {
     ASSERT_TRUE(!cpu->get_z_flag());
 };
 
-TEST(OpcodesTest, test_op_08) {
+TEST_F(OpcodesTest, test_op_08) {
     // LD NN, SP
     cpu->sp = 0x3020;
     mmu->address[cpu->pc + 1] = 0x00;
@@ -87,7 +89,7 @@ TEST(OpcodesTest, test_op_08) {
     ASSERT_TRUE(mmu->address[0x8001] == 0x30);
 };
 
-TEST(OpcodesTest, test_op_0A) {
+TEST_F(OpcodesTest, test_op_0A) {
     // LD A, (BC)
     cpu->reg_A = 0;
     cpu->reg_BC.set(0x8000);
@@ -98,7 +100,7 @@ TEST(OpcodesTest, test_op_0A) {
     ASSERT_TRUE(cpu->reg_A == 0x20);
 };
 
-TEST(OpcodesTest, test_op_0B) {
+TEST_F(OpcodesTest, test_op_0B) {
     // DEC BC
     cpu->reg_BC.set(0);
 
@@ -110,7 +112,7 @@ TEST(OpcodesTest, test_op_0B) {
     ASSERT_TRUE(cpu->reg_BC.get() == 0xFF);
 };
 
-TEST(OpcodesTest, test_op_0E) {
+TEST_F(OpcodesTest, test_op_0E) {
     // LD C, N
     mmu->address[cpu->pc + 1] = 0x23;
     cpu->reg_C = 0;
@@ -120,7 +122,7 @@ TEST(OpcodesTest, test_op_0E) {
 };
 
 
-TEST(OpcodesTest, test_op_0F) {
+TEST_F(OpcodesTest, test_op_0F) {
     // RRCA
     op_F0(mmu, cpu);
 
@@ -128,7 +130,7 @@ TEST(OpcodesTest, test_op_0F) {
 };
 
 
-TEST(OpcodesTest, test_op_11) {
+TEST_F(OpcodesTest, test_op_11) {
     // LD DE, NN
     mmu->address[cpu->pc + 1] = 0x25;
     mmu->address[cpu->pc + 2] = 0x32;
@@ -140,7 +142,7 @@ TEST(OpcodesTest, test_op_11) {
 };
 
 
-TEST(OpcodesTest, test_op_12) {
+TEST_F(OpcodesTest, test_op_12) {
     // LD (DE), A
     cpu->reg_DE.set(0x8000);
     cpu->reg_A = 0x10;
@@ -150,7 +152,7 @@ TEST(OpcodesTest, test_op_12) {
 };
 
 
-TEST(OpcodesTest, test_op_13) {
+TEST_F(OpcodesTest, test_op_13) {
     // INC DE 
     cpu->reg_DE.set(0);
     op_13(mmu, cpu);
@@ -166,7 +168,7 @@ TEST(OpcodesTest, test_op_13) {
 
 };
 
-TEST(OpcodesTest, test_op_16) {
+TEST_F(OpcodesTest, test_op_16) {
     // LD D, N
     cpu->reg_D = 0;
     mmu->address[cpu->pc + 1] = 0x20;
@@ -174,13 +176,13 @@ TEST(OpcodesTest, test_op_16) {
     ASSERT_TRUE(cpu->reg_D == 0x20);
 };
 
-TEST(OpcodesTest, test_op_17) {
+TEST_F(OpcodesTest, test_op_17) {
     // RLCA
     op_17(mmu, cpu);
     ASSERT_TRUE(!cpu->get_z_flag());
 };
 
-TEST(OpcodesTest, test_op_18) {
+TEST_F(OpcodesTest, test_op_18) {
     // JR NN
     int pc = cpu->pc;
     mmu->address[cpu->pc + 1] = 0x10;
@@ -193,7 +195,7 @@ TEST(OpcodesTest, test_op_18) {
     ASSERT_TRUE(cpu->pc == pc);
 };
 
-TEST(OpcodesTest, test_op_1A) {
+TEST_F(OpcodesTest, test_op_1A) {
     // ADD (DE), A
     cpu->reg_DE.set(0x8000);
     cpu->reg_A = 0xF0;
@@ -202,7 +204,7 @@ TEST(OpcodesTest, test_op_1A) {
     ASSERT_TRUE(mmu->address[cpu->reg_DE.get()] == cpu->reg_A);
 };
 
-TEST(OpcodesTest, test_op_1B) {
+TEST_F(OpcodesTest, test_op_1B) {
     // DEC DE
     cpu->reg_DE.set(0x8000);
     op_1B(mmu, cpu);
@@ -213,7 +215,7 @@ TEST(OpcodesTest, test_op_1B) {
     ASSERT_TRUE(cpu->reg_DE.get() == 0xFFFF);
 };
 
-TEST(OpcodesTest, test_op_1E) {
+TEST_F(OpcodesTest, test_op_1E) {
     // LD E, N
     cpu->reg_E = 0;
     mmu->address[cpu->pc + 1] = 0x20; 
@@ -221,14 +223,14 @@ TEST(OpcodesTest, test_op_1E) {
     ASSERT_TRUE(cpu->reg_E == 0x20);
 };
 
-TEST(OpcodesTest, test_op_1F) {
+TEST_F(OpcodesTest, test_op_1F) {
     // RRA
     cpu->set_z_flag(1);
     op_1F(mmu, cpu);
     ASSERT_TRUE(!cpu->get_z_flag());
 };
 
-TEST(OpcodesTest, test_op_20) {
+TEST_F(OpcodesTest, test_op_20) {
     // JR NZ, NN
     int pc = cpu->pc;
     mmu->address[cpu->pc + 1] = 0x01;
@@ -247,7 +249,7 @@ TEST(OpcodesTest, test_op_20) {
     ASSERT_TRUE(cpu->pc == pc + 1);
 };
 
-TEST(OpcodesTest, test_op_21) {
+TEST_F(OpcodesTest, test_op_21) {
     // LD HL, NN
     cpu->reg_HL.set(0);
     mmu->address[cpu->pc + 1] = 0x20;
@@ -256,7 +258,7 @@ TEST(OpcodesTest, test_op_21) {
     ASSERT_TRUE(cpu->reg_HL.get() == 0x3020);
 };
 
-TEST(OpcodesTest, test_op_22) {
+TEST_F(OpcodesTest, test_op_22) {
     // LDI (HL), A
     cpu->reg_HL.set(0x8000);
     cpu->reg_A = 0x45;
@@ -271,7 +273,7 @@ TEST(OpcodesTest, test_op_22) {
     ASSERT_TRUE(mmu->address[0xFFFF] == cpu->reg_A);
 };
 
-TEST(OpcodesTest, test_op_23) {
+TEST_F(OpcodesTest, test_op_23) {
     // INC HL
     cpu->reg_HL.set(0x8000);
     op_23(mmu, cpu);
@@ -283,7 +285,7 @@ TEST(OpcodesTest, test_op_23) {
 
 };
 
-TEST(OpcodesTest, test_op_26) {
+TEST_F(OpcodesTest, test_op_26) {
     // LD H, N
     mmu->address[cpu->pc + 1] = 0x20;
     cpu->reg_H = 0;
@@ -291,12 +293,24 @@ TEST(OpcodesTest, test_op_26) {
     ASSERT_TRUE(cpu->reg_H == 0x20);
 };
 
-TEST(OpcodesTest, test_op_27) {
-    // DAA TODO:
-    ASSERT_TRUE(true);
+TEST_F(OpcodesTest, test_op_27) {
+    // DAA
+
+    for (int a = 0; a < 0xFF; a++) {
+        cpu->reg_A = a;
+        cpu->set_c_flag(0);
+        cpu->set_h_flag(1);
+        cpu->set_n_flag(0);
+
+        op_27(mmu, cpu);
+
+        ASSERT_EQ(cpu->reg_A, 0x51);
+        ASSERT_FALSE(cpu->get_h_flag());
+        ASSERT_FALSE(cpu->get_n_flag());
+    }
 };
 
-TEST(OpcodesTest, test_op_28) {
+TEST_F(OpcodesTest, test_op_28) {
     // JR Z, N
     cpu->set_z_flag(0);
     int pc = cpu->pc;
@@ -315,7 +329,7 @@ TEST(OpcodesTest, test_op_28) {
     ASSERT_TRUE(cpu->pc == pc + (char)0xFF + 1);
 };
 
-TEST(OpcodesTest, test_op_2A) {
+TEST_F(OpcodesTest, test_op_2A) {
     // LDI A, (HL)
     cpu->reg_HL.set(0x8000);
     cpu->reg_A = 0;
@@ -325,7 +339,7 @@ TEST(OpcodesTest, test_op_2A) {
     ASSERT_TRUE(cpu->reg_A == 0x20);
 };
 
-TEST(OpcodesTest, test_op_2B) {
+TEST_F(OpcodesTest, test_op_2B) {
     // DEC HL
     cpu->reg_HL.set(0x8000);
     op_2B(mmu, cpu);
@@ -336,7 +350,7 @@ TEST(OpcodesTest, test_op_2B) {
     ASSERT_TRUE(cpu->reg_HL.get() == 0xFFFF);
 };
 
-TEST(OpcodesTest, test_op_2E) {
+TEST_F(OpcodesTest, test_op_2E) {
     // LD L, N
     mmu->address[cpu->pc + 1] = 0x20;
     cpu->reg_L = 0;
@@ -344,7 +358,7 @@ TEST(OpcodesTest, test_op_2E) {
     ASSERT_TRUE(cpu->reg_L == 0x20);
 };
 
-TEST(OpcodesTest, test_op_2F) {
+TEST_F(OpcodesTest, test_op_2F) {
     // CPL
     cpu->set_n_flag(0);
     cpu->set_h_flag(0);
@@ -359,7 +373,7 @@ TEST(OpcodesTest, test_op_2F) {
     ASSERT_TRUE(cpu->reg_A == 0x0F);
 };
 
-TEST(OpcodesTest, test_op_30) {
+TEST_F(OpcodesTest, test_op_30) {
     // JR NC, N
     cpu->set_c_flag(1);
     int pc = cpu->pc;
@@ -378,7 +392,7 @@ TEST(OpcodesTest, test_op_30) {
     ASSERT_TRUE(cpu->pc == pc + (char)0xFF + 1);
 };
 
-TEST(OpcodesTest, test_op_31) {
+TEST_F(OpcodesTest, test_op_31) {
     // LD SP, NN
     mmu->address[cpu->pc + 1] = 0x20;
     mmu->address[cpu->pc + 2] = 0x30;
@@ -387,7 +401,7 @@ TEST(OpcodesTest, test_op_31) {
     ASSERT_TRUE(cpu->sp == 0x3020);
 };
 
-TEST(OpcodesTest, test_op_32) {
+TEST_F(OpcodesTest, test_op_32) {
     // LDD (HL), A
     cpu->reg_HL.set(0x8000);
     cpu->reg_A = 0x10;
@@ -396,7 +410,7 @@ TEST(OpcodesTest, test_op_32) {
     ASSERT_TRUE(cpu->reg_HL.get() == 0x7FFF);
 };
 
-TEST(OpcodesTest, test_op_33) {
+TEST_F(OpcodesTest, test_op_33) {
     // INC SP
     cpu->sp = 0;
     op_33(mmu, cpu);
@@ -407,7 +421,7 @@ TEST(OpcodesTest, test_op_33) {
     ASSERT_TRUE(cpu->sp == 0);
 };
 
-TEST(OpcodesTest, test_op_34) {
+TEST_F(OpcodesTest, test_op_34) {
     // INC (HL)
     cpu->reg_HL.set(0x8000);
     mmu->address[cpu->reg_HL.get()] = 0;
@@ -419,7 +433,7 @@ TEST(OpcodesTest, test_op_34) {
     ASSERT_TRUE(mmu->address[cpu->reg_HL.get()] == 0);
 };
 
-TEST(OpcodesTest, test_op_35) {
+TEST_F(OpcodesTest, test_op_35) {
     // DEC (HL)
     cpu->reg_HL.set(0x8000);
     mmu->address[cpu->reg_HL.get()] = 0;
@@ -431,7 +445,7 @@ TEST(OpcodesTest, test_op_35) {
     ASSERT_TRUE(mmu->address[cpu->reg_HL.get()] == 0xFE);
 };
 
-TEST(OpcodesTest, test_op_36) {
+TEST_F(OpcodesTest, test_op_36) {
     // LD (HL), N
     cpu->reg_HL.set(0x8000);
     mmu->address[cpu->reg_HL.get()] = 0;
@@ -440,7 +454,7 @@ TEST(OpcodesTest, test_op_36) {
     ASSERT_TRUE(mmu->address[cpu->reg_HL.get()] == 10);
 };
 
-TEST(OpcodesTest, test_op_37) {
+TEST_F(OpcodesTest, test_op_37) {
     // SCF
     cpu->set_n_flag(1);
     cpu->set_h_flag(1);
@@ -451,7 +465,7 @@ TEST(OpcodesTest, test_op_37) {
     ASSERT_TRUE(!cpu->get_h_flag());
 };
 
-TEST(OpcodesTest, test_op_38) {
+TEST_F(OpcodesTest, test_op_38) {
     // JR C, N
     cpu->set_c_flag(0);
     int pc = cpu->pc;
@@ -470,7 +484,7 @@ TEST(OpcodesTest, test_op_38) {
     ASSERT_TRUE(cpu->pc == pc + (char)0xFF + 1);
 };
 
-TEST(OpcodesTest, test_op_3A) {
+TEST_F(OpcodesTest, test_op_3A) {
     // LDD A, (HL)
     cpu->reg_HL.set(0x8000);
     mmu->address[cpu->reg_HL.get()] = 0x10;
@@ -480,7 +494,7 @@ TEST(OpcodesTest, test_op_3A) {
     ASSERT_TRUE(cpu->reg_HL.get() == 0x7FFF);
 };
 
-TEST(OpcodesTest, test_op_3B) {
+TEST_F(OpcodesTest, test_op_3B) {
     // DEC SP
     cpu->sp = 0;
     op_3B(mmu, cpu);
@@ -491,7 +505,7 @@ TEST(OpcodesTest, test_op_3B) {
     ASSERT_TRUE(cpu->sp == 0);
 };
 
-TEST(OpcodesTest, test_op_3E) {
+TEST_F(OpcodesTest, test_op_3E) {
     // LD A, N
     mmu->address[cpu->pc + 1] = 0x10;
     cpu->reg_A = 0;
@@ -499,7 +513,7 @@ TEST(OpcodesTest, test_op_3E) {
     ASSERT_TRUE(cpu->reg_A == 0x10);
 };
 
-TEST(OpcodesTest, test_op_3F) {
+TEST_F(OpcodesTest, test_op_3F) {
     // CCF
     cpu->set_n_flag(1);
     cpu->set_h_flag(1);
@@ -514,7 +528,7 @@ TEST(OpcodesTest, test_op_3F) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(OpcodesTest, test_op_C0) {
+TEST_F(OpcodesTest, test_op_C0) {
     // RET NZ
     cpu->set_z_flag(0);
     cpu->sp = 0x10;
@@ -531,7 +545,7 @@ TEST(OpcodesTest, test_op_C0) {
     ASSERT_TRUE(cpu->pc == 0xFF);
 };
 
-TEST(OpcodesTest, test_op_C2) {
+TEST_F(OpcodesTest, test_op_C2) {
     // JP NZ
     cpu->set_z_flag(0);
     cpu->pc = 0x100;
@@ -546,7 +560,7 @@ TEST(OpcodesTest, test_op_C2) {
     ASSERT_TRUE(cpu->pc == 0x102);
 };
 
-TEST(OpcodesTest, test_op_C3) {
+TEST_F(OpcodesTest, test_op_C3) {
     // JP NN
     cpu->pc = 0x100;
     mmu->address[cpu->pc + 1] = 0x20;
@@ -555,7 +569,7 @@ TEST(OpcodesTest, test_op_C3) {
     ASSERT_TRUE(cpu->pc == 0x1020 - 1);
 };
 
-TEST(OpcodesTest, test_op_C4) {
+TEST_F(OpcodesTest, test_op_C4) {
     // CALL NZ, NN
     cpu->set_z_flag(0);
     cpu->sp = 0xFFFF;
@@ -578,14 +592,14 @@ TEST(OpcodesTest, test_op_C4) {
     ASSERT_TRUE(cpu->sp == 0xFFFF);
 };
 
-TEST(OpcodesTest, test_op_C7) {
+TEST_F(OpcodesTest, test_op_C7) {
     // RST 00
     cpu->pc = 0x100;
     op_C7(mmu, cpu);
     ASSERT_EQ(cpu->pc, 0xFFFF);
 };
 
-TEST(OpcodesTest, test_op_C8) {
+TEST_F(OpcodesTest, test_op_C8) {
     // RET Z
     cpu->set_z_flag(1);
     cpu->sp = 0x10;
@@ -602,7 +616,7 @@ TEST(OpcodesTest, test_op_C8) {
     ASSERT_TRUE(cpu->pc == 0xFF);
 };
 
-TEST(OpcodesTest, test_op_CA) {
+TEST_F(OpcodesTest, test_op_CA) {
     // JP Z, NN
     cpu->set_z_flag(1);
     cpu->pc = 0x100;
@@ -617,7 +631,7 @@ TEST(OpcodesTest, test_op_CA) {
     ASSERT_TRUE(cpu->pc == 0x102);
 };
 
-TEST(OpcodesTest, test_op_CC) {
+TEST_F(OpcodesTest, test_op_CC) {
     // CALL Z, NN
     cpu->set_z_flag(1);
     cpu->sp = 0xFFFF;
@@ -640,7 +654,7 @@ TEST(OpcodesTest, test_op_CC) {
     ASSERT_TRUE(cpu->sp == 0xFFFF);
 };
 
-TEST(OpcodesTest, test_op_CD) {
+TEST_F(OpcodesTest, test_op_CD) {
     // CALL NN
     cpu->sp = 0xFFFF;
     cpu->pc = 0x100;
@@ -653,14 +667,14 @@ TEST(OpcodesTest, test_op_CD) {
     ASSERT_TRUE(mmu->address[cpu->sp + 1] == 0x01);
 };
 
-TEST(OpcodesTest, test_op_CF) {
+TEST_F(OpcodesTest, test_op_CF) {
     // RST 08
     cpu->pc = 0x100;
     op_CF(mmu, cpu);
     ASSERT_EQ(cpu->pc, 0x07);
 };
 
-TEST(OpcodesTest, test_op_D0) {
+TEST_F(OpcodesTest, test_op_D0) {
     // RET NZ
     cpu->set_c_flag(0);
     cpu->sp = 0x10;
@@ -677,7 +691,7 @@ TEST(OpcodesTest, test_op_D0) {
     ASSERT_TRUE(cpu->pc == 0xFF);
 };
 
-TEST(OpcodesTest, test_op_D2) {
+TEST_F(OpcodesTest, test_op_D2) {
     // JP NC
     cpu->set_c_flag(0);
     cpu->pc = 0x100;
@@ -692,7 +706,7 @@ TEST(OpcodesTest, test_op_D2) {
     ASSERT_TRUE(cpu->pc == 0x102);
 };
 
-TEST(OpcodesTest, test_op_D4) {
+TEST_F(OpcodesTest, test_op_D4) {
     // CALL NC, NN
     cpu->set_c_flag(0);
     cpu->sp = 0xFFFF;
@@ -715,14 +729,14 @@ TEST(OpcodesTest, test_op_D4) {
     ASSERT_TRUE(cpu->sp == 0xFFFF);
 };
 
-TEST(OpcodesTest, test_op_D7) {
+TEST_F(OpcodesTest, test_op_D7) {
     // RST 10
     cpu->pc = 0x100;
     op_D7(mmu, cpu);
     ASSERT_EQ(cpu->pc, 0x0F);
 };
 
-TEST(OpcodesTest, test_op_D8) {
+TEST_F(OpcodesTest, test_op_D8) {
     // RET C
     cpu->set_c_flag(1);
     cpu->sp = 0x10;
@@ -739,7 +753,7 @@ TEST(OpcodesTest, test_op_D8) {
     ASSERT_TRUE(cpu->pc == 0xFF);
 };
 
-TEST(OpcodesTest, test_op_DA) {
+TEST_F(OpcodesTest, test_op_DA) {
     // JP C
     cpu->set_c_flag(1);
     cpu->pc = 0x100;
@@ -754,14 +768,14 @@ TEST(OpcodesTest, test_op_DA) {
     ASSERT_TRUE(cpu->pc == 0x102);
 };
 
-TEST(OpcodesTest, test_op_DF) {
+TEST_F(OpcodesTest, test_op_DF) {
     // RST 18
     cpu->pc = 0x100;
     op_DF(mmu, cpu);
     ASSERT_EQ(cpu->pc, 0x17);
 };
 
-TEST(OpcodesTest, test_op_E0) {
+TEST_F(OpcodesTest, test_op_E0) {
     // LDH A
     cpu->pc = 0x100;
     cpu->reg_A = 0x20;
@@ -771,7 +785,7 @@ TEST(OpcodesTest, test_op_E0) {
     ASSERT_EQ(mmu->address[0xff10], 0x20);
 };
 
-TEST(OpcodesTest, test_op_E2) {
+TEST_F(OpcodesTest, test_op_E2) {
     // LD (C), A
     cpu->pc = 0x100;
     cpu->reg_A = 0x20;
@@ -782,14 +796,14 @@ TEST(OpcodesTest, test_op_E2) {
     ASSERT_EQ(mmu->address[0xff00 + cpu->reg_C], 0x20);
 };
 
-TEST(OpcodesTest, test_op_E7) {
+TEST_F(OpcodesTest, test_op_E7) {
     // RST 20
     cpu->pc = 0x100;
     op_E7(mmu, cpu);
     ASSERT_EQ(cpu->pc, 0x1F);
 };
 
-TEST(OpcodesTest, test_op_E8) {
+TEST_F(OpcodesTest, test_op_E8) {
     // ADD SP, N TODO: more tests for this opcode
     cpu->pc = 0x100;
     mmu->address[cpu->pc + 1] = 0;
@@ -807,7 +821,7 @@ TEST(OpcodesTest, test_op_E8) {
     ASSERT_TRUE(cpu->get_c_flag());
 };
 
-TEST(OpcodesTest, test_op_E9) {
+TEST_F(OpcodesTest, test_op_E9) {
     // JP HL
     cpu->pc = 0x100;
     cpu->reg_HL.set(0x8000);
@@ -815,7 +829,7 @@ TEST(OpcodesTest, test_op_E9) {
     ASSERT_EQ(cpu->pc, 0x8000 - 1);
 };
 
-TEST(OpcodesTest, test_op_EA) {
+TEST_F(OpcodesTest, test_op_EA) {
     // LD (NN), A
     cpu->pc = 0x100;
     cpu->reg_A = 0x20;
@@ -825,14 +839,14 @@ TEST(OpcodesTest, test_op_EA) {
     ASSERT_EQ(mmu->address[0x8001], 0x20);
 };
 
-TEST(OpcodesTest, test_op_EF) {
+TEST_F(OpcodesTest, test_op_EF) {
     // RST 28
     cpu->pc = 0x100;
     op_EF(mmu, cpu);
     ASSERT_EQ(cpu->pc, 0x27);
 };
 
-TEST(OpcodesTest, test_op_F0) {
+TEST_F(OpcodesTest, test_op_F0) {
     // LD A, (N)
     cpu->pc = 0x100;
     cpu->reg_A = 0;
@@ -843,7 +857,7 @@ TEST(OpcodesTest, test_op_F0) {
 };
 
 
-TEST(OpcodesTest, test_op_F2) {
+TEST_F(OpcodesTest, test_op_F2) {
     // LD A, (C)
     cpu->pc = 0x100;
     cpu->reg_A = 0;
@@ -853,7 +867,7 @@ TEST(OpcodesTest, test_op_F2) {
     ASSERT_EQ(cpu->reg_A, 0x30);
 };
 
-TEST(OpcodesTest, test_op_F7) {
+TEST_F(OpcodesTest, test_op_F7) {
     // RST 30
     cpu->pc = 0x100;
     op_F7(mmu, cpu);
@@ -862,7 +876,7 @@ TEST(OpcodesTest, test_op_F7) {
 
 // TODO: F8
 
-TEST(OpcodesTest, test_op_F9) {
+TEST_F(OpcodesTest, test_op_F9) {
     // LD SP, HL
     cpu->sp = 0;
     cpu->reg_HL.set(0x8000);
@@ -870,7 +884,7 @@ TEST(OpcodesTest, test_op_F9) {
     ASSERT_EQ(cpu->sp, 0x8000);
 };
 
-TEST(OpcodesTest, test_op_FA) {
+TEST_F(OpcodesTest, test_op_FA) {
     // LD A, (NN)
     cpu->pc = 0x100;
     cpu->reg_A = 0;
@@ -881,7 +895,7 @@ TEST(OpcodesTest, test_op_FA) {
     ASSERT_EQ(cpu->reg_A, 0x30);
 };
 
-TEST(OpcodesTest, test_op_FF) {
+TEST_F(OpcodesTest, test_op_FF) {
     // RST 38
     cpu->pc = 0x100;
     op_FF(mmu, cpu);

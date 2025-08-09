@@ -1,3 +1,4 @@
+#include "config.h"
 #include "mmu.h"
 #include <cstring>
 
@@ -35,7 +36,7 @@ Mmu::Mmu(Cartridge *c) {
     address[0xFF05] = 0x00;  // TIMA
     address[0xFF06] = 0x00;  // TMA
     address[0xFF07] = 0x00;  // TAC
-    address[0xFF0F] = 0xE1;  // FIXME: IF
+    address[0xFF0F] = 0xE1;  // IF
     address[0xFF10] = 0x80;  // NR10
     address[0xFF11] = 0xBF;  // NR11
     address[0xFF12] = 0xF3;  // NR12
@@ -91,6 +92,12 @@ Mmu::Mmu(Cartridge *c) {
 };
 
 byte Mmu::read_memory(word addr) {
+#if DEBUG
+    if (addr == 0xFF44) {
+        return 0x90;
+    }
+#endif
+
     // reading from rom bank
     if (addr >= 0x4000 && addr <= 0x7FFF) {
         return mbc->read(addr);

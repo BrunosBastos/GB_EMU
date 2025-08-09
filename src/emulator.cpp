@@ -1,11 +1,15 @@
 #include "emulator.h"
 
-Emulator::Emulator(const char *filename) {
-    Cartridge *c = new Cartridge(filename);
+Emulator::Emulator(std::string *filename) {
+    reset(filename);
+};
+
+void Emulator::reset(std::string *filename) {
+    Cartridge *c = new Cartridge(*filename);
     mmu = new Mmu(c);
     cpu = new Cpu(mmu);
     ppu = new Ppu(mmu);
-};
+}
 
 void Emulator::run() {
     cpu->emulate_cycle();
@@ -156,7 +160,7 @@ void Emulator::set_lcd_status() {
         ppu->set_mode(1);
         return;
     }
-    byte last_mode = ppu->get_mode();
+    const byte last_mode = ppu->get_mode();
 
     bool req_interrupt = false;
 
@@ -165,8 +169,8 @@ void Emulator::set_lcd_status() {
         ppu->set_mode(1);
         req_interrupt = mmu->STAT.get() & 0x10;
     } else {
-        int mode2bounds = 114 - 20;
-        int mode3bounds = mode2bounds - 43;
+        constexpr int mode2bounds = 114 - 20;
+        constexpr int mode3bounds = mode2bounds - 43;
 
         if (clock_count >= mode2bounds) {
             ppu->set_mode(2);

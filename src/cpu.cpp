@@ -1,3 +1,4 @@
+#include "config.h"
 #include "cpu.h"
 #include "opcodes.h"
 #include <set>
@@ -23,7 +24,18 @@ Cpu::Cpu(Mmu* mmu) {
     reg_E = 0xD8;
     reg_H = 0x01;
     reg_L = 0x4D;
+
+    #if DEBUG
+    if (FILE *f = fopen("../test/doctor.txt", "w")) fclose(f); //reset file
+    this->debug_fp = fopen("../test/doctor.txt", "a+");
+    #endif
 };
+
+Cpu::~Cpu() {
+    #if DEBUG
+    fclose(this->debug_fp);
+    #endif
+}
 
 void Cpu::emulate_cycle() {
 
@@ -39,9 +51,12 @@ void Cpu::emulate_cycle() {
     execute_opcode();
     total_clock += last_clock;      // ig total_clock is not used but...
 
-    pc++;
+    // when there is an halt, it needs one cycle of delay. so things can only happen in the next cycle.
+    // the current code, does that but has a big flaw. since we are checking for an halt by checking the last instruction
+    // there is a possibility that the last instruction is part of an instruction (ex. 2 byte instruction) and the last pc
+    // is not really the thing that we are reading but the rest of an instruction. so for that we have to read the halt at the begginning
 
-    // debug();
+    pc++;
 
     if (pending_interrupt_disabled) {
         if (mmu->read_memory(pc - 1) != 0xF3) {
@@ -58,109 +73,23 @@ void Cpu::emulate_cycle() {
 };
 
 void Cpu::execute_opcode() {
-    /*
-    if(mmu->read_memory(0xff02) == 0x81) {
-        printf("%c ", mmu->read_memory(0xff01));
-        mmu->address[0xff02] = 0;
-    }
-    if(mmu->address[0xff00] == 0x10)
-        printf("%02x\n",mmu->address[0xff00]);
-    if(pc == 0x50) {
-        printf("Timer interrupt\n");
-        exit(1);
-    }
-    */
+    #if DEBUG
+    debug();
+    #endif
 
-    //printf("opcode: %02x\n", opcode);
-     if(opcode != 0xCB)
+    if(opcode != 0xCB) {
         ops.insert(opcode);
-    else 
+    } else {
         ops_cb.insert(mmu->read_memory(pc + 1));
-
-    if (pc == 0x40) {
-        n_op++;
-        //debug();
-        // if(n_op > 130) {
-        //     if(reg_HL.get() != 0xffa8) {
-        //         printf("hl : %04x\n", reg_HL.get());
-        //         exit(1);
-        //     }
-        // }
-        //printf("%i\n", n_op);  
-        //debug_tile_addr();
-        //debug_map_addr();
-        //if (n_op >= 40 && n_op < 100 && n_op % 10 == 0)
-            //debug_dump_memory();
     }
 
-    if(true) {
-        //printf("ff80 : %02x\n", mmu->read_memory(0xff80));
-        /*
-        10 >
-        20 <
-        40 ^
-        80 v
-        a 02
-        s 01
-        E 08
-        */
-    }
-    
-    //debug();
-    if (n_op == 128) {
-        // FILE *fp;
-        // fp = fopen("opcodes_debug.txt", "w");
-
-        // for (int i=0; i < 0xFF; i++) {
-        //     fprintf(fp, "%02x %c\n", i, ops.count(i) ? 'x' : ' ');
-        // }
-
-        // for (int i=0; i < 0xFF; i++) {
-        //     fprintf(fp, "cb %02x %c\n", i, ops_cb.count(i) ? 'x' : ' ');
-        // }
-
-        // fclose(fp);
-        //exit(1);
-    }
-
-    // if(opcode == 0x27) {
-    //     for (auto it = ops.begin(); it != ops.end(); ++it)
-    //         printf("%02x \n", *it);
-
-    //     for (auto pt = ops_cb.begin(); pt != ops_cb.end(); ++pt)
-    //         printf("cb %02x \n", *pt);
-    //     exit(1);
-    // }
-    
-    // FILE *fp;
-    // fp = fopen("bad_daa.txt", "a+");
-    // if(opcode == 0x27) fprintf(fp, " in %04x \n", reg_AF.get());
     (*optable[opcode])(mmu, this);
-    
-
-    // if(opcode == 0x27) fprintf(fp, "out %04x \n", reg_AF.get());
-    // fclose(fp);
 };
 
 
 void Cpu::debug() {
-    // FILE *fp;
-    // fp = fopen("daa.txt", "a+");
-    // fprintf(fp, "\npc: %04x\n", pc);
-    // fprintf(fp, "\topcode: %02x  last_clock: %2i\n", opcode, last_clock);
-    // fprintf(fp, "\taf: %02x%02x    lcdc: %02x\n", reg_A, reg_F, mmu->LCDC.get());
-    // fprintf(fp, "\tbc: %02x%02x    stat: %02x\n", reg_B, reg_C, mmu->STAT.get());
-    // fprintf(fp, "\tde: %02x%02x    ly:   %02x  (%3i)\n", reg_D, reg_E, mmu->LY.get(), mmu->LY.get());
-    // fprintf(fp, "\thl: %02x%02x    ie:   %02x\n", reg_H, reg_L,  mmu->IE.get());
-    // fprintf(fp, "\tsp: %04x    if:   %02x\n", sp, mmu->IF.get());
-    // fclose(fp);
-
-    FILE *fp;
-    fp = fopen("daa.txt", "a+");
-    fprintf(fp, "\npc: %04x  mmu[ff44]: %02x\n", pc, mmu->read_memory(0xff44));
-    fprintf(fp, "\topcode: %02x  sp: %04x\n", opcode, sp);
-    fprintf(fp, "\taf: %02x%02x  bc: %02x%02x  de: %02x%02x  hl: %02x%02x\n", reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L);
-    fclose(fp);
+    fprintf(this->debug_fp, "A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%04x PC:%04x PCMEM:%02x,%02x,%02x,%02x\n",
+        reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L, sp, pc, mmu->read_memory(pc), mmu->read_memory(pc+1), mmu->read_memory(pc+2), mmu->read_memory(pc+3));
 };
 
 void Cpu::debug_tile_addr() {
@@ -264,11 +193,12 @@ void Cpu::rrc8(byte *reg_8) {
 };
 
 void Cpu::rr8(byte *reg_8) {
+    byte carry = get_c_flag();
+
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(*reg_8 & 0x01);
 
-    byte carry = get_c_flag();
     *reg_8 = (*reg_8 >> 1) | (carry << 7);
 
     set_z_flag(*reg_8 == 0);

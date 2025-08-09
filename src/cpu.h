@@ -3,14 +3,12 @@
 
 #include "mmu.h"
 
-
-
-
 class Cpu {
 
     public:
 
         Cpu(Mmu* mmu);
+        ~Cpu();
         Mmu *mmu;               // pointer to the memory object
         word pc = 0x100;		// program counter
         word opcode;			// current operation code
@@ -38,6 +36,8 @@ class Cpu {
         bool pending_interrupt_disabled;
         bool pending_interrupt_enabled;
         bool halted = false;
+
+        FILE* debug_fp;
 
         void emulate_cycle();
         void execute_opcode();

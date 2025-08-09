@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 
+#include "config.h"
 #include "cartridge.h"
 #include "cpu.h"
 #include "mmu.h"
@@ -42,6 +43,7 @@ void draw_sprites(Ppu *p) {
 
 void draw_bg(Ppu *p) {
 
+    #if DEBUG
     std::ofstream myfile;
     myfile.open("example.txt");
     for(int i=0; i < PPU_BUFFER_WIDTH; i++) {
@@ -51,6 +53,7 @@ void draw_bg(Ppu *p) {
         myfile << std::endl;
     }
     myfile.close();
+    #endif
 
     SDL_UpdateTexture(bg_texture, nullptr, p->bg_buffer, PPU_BUFFER_WIDTH * sizeof(int));
     SDL_RenderCopy(renderer, bg_texture, nullptr, nullptr);
@@ -142,16 +145,26 @@ void handle_input(Emulator* emu, SDL_Event event) {
     }
 };
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    #if DEBUG
+    std::cout << "Running in DEBUG mode" << std::endl;
+    #endif
+
+    std::string filename = "/cpu_instrs/cpu_instrs.gb";
+    if (argc == 2) {
+        filename = argv[1];
+    }
+
+    std::cout << "Using Rom: " << filename << "\n";
+    filename = "../test/test_roms/" + filename;
+
     sdl_init();
     SDL_Event event;
 
-    FILE *fp;
-    fp = fopen("debug.txt", "w");
-    fclose(fp);
     initialize_optable();
 
-    Emulator *emu = new Emulator("../test_roms/cpu_instrs/individual/01-special.gb");
+    Emulator *emu = new Emulator(&filename);
    
     bool running = true;
     while (running) {

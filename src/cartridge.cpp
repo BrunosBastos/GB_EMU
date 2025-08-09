@@ -1,9 +1,9 @@
 #include "cartridge.h"
 #include <string.h>
 
-Cartridge::Cartridge(const char* filename) {
+Cartridge::Cartridge(std::string filename) {
     FILE *file = NULL;
-    file = fopen(filename, "rb");
+    file = fopen(filename.c_str(), "rb");
     
     if(file) {
         fseek(file, 0, SEEK_END);
@@ -16,7 +16,7 @@ Cartridge::Cartridge(const char* filename) {
                 free(rom);
                 fclose(file);
             }
-            title = strdup(filename);
+            title = strdup(filename.c_str());
         }
         fclose(file);
     } 

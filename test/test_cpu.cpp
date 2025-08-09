@@ -1,26 +1,28 @@
 #include "tests.h"
 
 
-class CpuTest : public ::testing::Environment {
- public:
-  ~CpuTest() override {}
+class CpuTest : public ::testing::Test {
+public:
+    ~CpuTest() override {}
 
-  // Override this to define how to set up the environment.
-  void SetUp() override {
-    Cartridge *c = new Cartridge("../roms/tetris.gb");
-    mmu = new Mmu(c);
-    cpu = new Cpu(mmu);      
-  }
+    Cartridge *c;
+    Mmu *mmu;
+    Cpu *cpu;
 
-  // Override this to define how to tear down the environment.
-  void TearDown() override {
-    free(cpu);
-    free(mmu);      
-  }
+    void SetUp() override {
+        c = new Cartridge("/mnt/c/Users/Utilizador/Desktop/projects/GB_EMU/test/test_roms/cpu_instrs/cpu_instrs.gb");
+        mmu = new Mmu(c);
+        cpu = new Cpu(mmu);
+    }
+
+    void TearDown() override {
+        free(cpu);
+        free(mmu);
+    }
 };
 
 
-TEST(CpuTest, test_swap8) {
+TEST_F(CpuTest, test_swap8) {
     cpu->reg_B = 0x12;
     cpu->swap8(&cpu->reg_B);
 
@@ -40,7 +42,7 @@ TEST(CpuTest, test_swap8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_swap16) {
+TEST_F(CpuTest, test_swap16) {
     cpu->reg_BC.set(0x1234);
     cpu->swap16(&cpu->reg_BC);
 
@@ -60,7 +62,7 @@ TEST(CpuTest, test_swap16) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rlc8) {
+TEST_F(CpuTest, test_rlc8) {
     cpu->reg_B = 0x8F;
     cpu->rlc8(&cpu->reg_B);
 
@@ -80,7 +82,7 @@ TEST(CpuTest, test_rlc8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rl8) {
+TEST_F(CpuTest, test_rl8) {
     cpu->reg_B = 0;
     cpu->set_c_flag(1);
     cpu->rl8(&cpu->reg_B);
@@ -102,7 +104,7 @@ TEST(CpuTest, test_rl8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rrc8) {
+TEST_F(CpuTest, test_rrc8) {
     cpu->reg_B = 0x01;
     cpu->rrc8(&cpu->reg_B);
 
@@ -122,7 +124,7 @@ TEST(CpuTest, test_rrc8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rr8) {
+TEST_F(CpuTest, test_rr8) {
     cpu->reg_B = 0x01;
     cpu->set_c_flag(1);
     cpu->rr8(&cpu->reg_B);
@@ -144,7 +146,7 @@ TEST(CpuTest, test_rr8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_sla8) {
+TEST_F(CpuTest, test_sla8) {
     cpu->reg_B = 0x01;
     cpu->sla8(&cpu->reg_B);
 
@@ -164,7 +166,7 @@ TEST(CpuTest, test_sla8) {
     ASSERT_TRUE(cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_sra8) {
+TEST_F(CpuTest, test_sra8) {
     cpu->reg_B = 0x80;
     cpu->sra8(&cpu->reg_B);
 
@@ -184,7 +186,7 @@ TEST(CpuTest, test_sra8) {
     ASSERT_TRUE(cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_srl8) {
+TEST_F(CpuTest, test_srl8) {
     cpu->reg_B = 0x80;
     cpu->srl8(&cpu->reg_B);
 
@@ -204,7 +206,7 @@ TEST(CpuTest, test_srl8) {
     ASSERT_TRUE(cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_bit) {
+TEST_F(CpuTest, test_bit) {
     bool prev_c_flag;
 
     cpu->reg_B = 0x01;
@@ -246,7 +248,7 @@ TEST(CpuTest, test_bit) {
     ASSERT_EQ(cpu->get_c_flag(), prev_c_flag);
 };
 
-TEST(CpuTest, test_set) {
+TEST_F(CpuTest, test_set) {
     cpu->reg_B = 0x01;
     cpu->set(&cpu->reg_B, 0);
 
@@ -270,7 +272,7 @@ TEST(CpuTest, test_set) {
     ASSERT_EQ(mmu->address[0x8000], 0x03);
 };
 
-TEST(CpuTest, test_res) {
+TEST_F(CpuTest, test_res) {
     cpu->reg_B = 0x01;
     cpu->res(&cpu->reg_B, 0);
 
@@ -294,7 +296,7 @@ TEST(CpuTest, test_res) {
     ASSERT_EQ(mmu->address[0x8000], 0x01);
 };
 
-TEST(CpuTest, test_add8) {
+TEST_F(CpuTest, test_add8) {
     cpu->reg_B = 0x77;
     cpu->add8(&cpu->reg_B, 0x88);
 
@@ -332,7 +334,7 @@ TEST(CpuTest, test_add8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_sub8) {
+TEST_F(CpuTest, test_sub8) {
     cpu->reg_B = 0x77;
     cpu->sub8(&cpu->reg_B, 0x78);
 
@@ -361,7 +363,7 @@ TEST(CpuTest, test_sub8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_and8) {
+TEST_F(CpuTest, test_and8) {
     cpu->reg_B = 0xFF;
     cpu->and8(&cpu->reg_B, 0xFF);
 
@@ -381,7 +383,7 @@ TEST(CpuTest, test_and8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_or8) {
+TEST_F(CpuTest, test_or8) {
     cpu->reg_B = 0xFF;
     cpu->or8(&cpu->reg_B, 0);
 
@@ -401,7 +403,7 @@ TEST(CpuTest, test_or8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_xor8) {
+TEST_F(CpuTest, test_xor8) {
     cpu->reg_B = 0xFF;
     cpu->xor8(&cpu->reg_B, 0xFF);
 
@@ -421,7 +423,7 @@ TEST(CpuTest, test_xor8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_cp8) {
+TEST_F(CpuTest, test_cp8) {
     cpu->reg_B = 0x77;
     cpu->cp8(&cpu->reg_B, 0x78);
 
@@ -447,7 +449,7 @@ TEST(CpuTest, test_cp8) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_inc8) {
+TEST_F(CpuTest, test_inc8) {
     cpu->reg_B = 0;
     cpu->inc8(&cpu->reg_B);
 
@@ -465,7 +467,7 @@ TEST(CpuTest, test_inc8) {
     ASSERT_TRUE(cpu->get_h_flag());
 };
 
-TEST(CpuTest, test_dec8) {
+TEST_F(CpuTest, test_dec8) {
     cpu->reg_B = 0;
     cpu->dec8(&cpu->reg_B);
 
@@ -483,7 +485,7 @@ TEST(CpuTest, test_dec8) {
     ASSERT_TRUE(!cpu->get_h_flag());
 };
 
-TEST(CpuTest, test_add16) {
+TEST_F(CpuTest, test_add16) {
     bool prev_z_flag;
 
     cpu->reg_BC.set(0x7700);
@@ -527,7 +529,7 @@ TEST(CpuTest, test_add16) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rl16) {
+TEST_F(CpuTest, test_rl16) {
     cpu->reg_BC.set(0x8000);
     mmu->address[0x8000] = 0;
     cpu->set_c_flag(1);
@@ -551,7 +553,7 @@ TEST(CpuTest, test_rl16) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rlc16) {
+TEST_F(CpuTest, test_rlc16) {
     cpu->reg_BC.set(0x8000);
     mmu->address[0x8000] = 0x8F;
     cpu->rlc16(&cpu->reg_BC);
@@ -573,7 +575,7 @@ TEST(CpuTest, test_rlc16) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rrc16) {
+TEST_F(CpuTest, test_rrc16) {
     cpu->reg_BC.set(0x8000);
     mmu->address[0x8000] = 0x01;
     cpu->rrc16(&cpu->reg_BC);
@@ -595,7 +597,7 @@ TEST(CpuTest, test_rrc16) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_rr16) {
+TEST_F(CpuTest, test_rr16) {
     cpu->reg_BC.set(0x8000);
     mmu->address[0x8000] = 0x01;
     cpu->set_c_flag(1);
@@ -619,7 +621,7 @@ TEST(CpuTest, test_rr16) {
     ASSERT_TRUE(!cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_sla16) {
+TEST_F(CpuTest, test_sla16) {
     cpu->reg_BC.set(0x8000);
     mmu->address[0x8000] = 0x01;
     cpu->sla16(&cpu->reg_BC);
@@ -641,7 +643,7 @@ TEST(CpuTest, test_sla16) {
     ASSERT_TRUE(cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_sra16) {
+TEST_F(CpuTest, test_sra16) {
     cpu->reg_BC.set(0x8000);
     mmu->address[0x8000] = 0x80;
     cpu->sra16(&cpu->reg_BC);
@@ -663,7 +665,7 @@ TEST(CpuTest, test_sra16) {
     ASSERT_TRUE(cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_srl16) {
+TEST_F(CpuTest, test_srl16) {
     cpu->reg_BC.set(0x8000);
     mmu->address[0x8000] = 0x80;
     cpu->srl16(&cpu->reg_BC);
@@ -685,7 +687,7 @@ TEST(CpuTest, test_srl16) {
     ASSERT_TRUE(cpu->get_c_flag());
 };
 
-TEST(CpuTest, test_ret) {
+TEST_F(CpuTest, test_ret) {
     cpu->sp = 0xFFFE;
     mmu->address[0xFFFE] = 0x10;
     mmu->address[0xFFFF] = 0x20;
@@ -695,7 +697,7 @@ TEST(CpuTest, test_ret) {
     ASSERT_EQ(cpu->sp, 0);
 };
 
-TEST(CpuTest, test_store_pc_stack) {
+TEST_F(CpuTest, test_store_pc_stack) {
     cpu->pc = 0x2010;
     cpu->sp = 0;
     cpu->store_pc_stack();
@@ -705,7 +707,7 @@ TEST(CpuTest, test_store_pc_stack) {
     ASSERT_EQ(cpu->sp, 0xFFFE);
 };
 
-TEST(CpuTest, test_push16) {
+TEST_F(CpuTest, test_push16) {
     cpu->reg_BC.set(0x2010);
     cpu->sp = 0;
     cpu->push16(&cpu->reg_BC);
@@ -715,7 +717,7 @@ TEST(CpuTest, test_push16) {
     ASSERT_EQ(cpu->sp, 0xFFFE);
 };
 
-TEST(CpuTest, test_pop16) {
+TEST_F(CpuTest, test_pop16) {
     cpu->sp = 0xFFFE;
     mmu->address[0xFFFE] = 0x10;
     mmu->address[0xFFFF] = 0x20;

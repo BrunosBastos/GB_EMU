@@ -1,6 +1,7 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <string>
 #include "types.h"
 #include "cpu.h"
 #include "mmu.h"
@@ -10,8 +11,9 @@
 class Emulator {
 
     public:
-		Emulator(const char *filename);
+		Emulator(std::string *filename);
 		void run();
+		void reset(std::string *filename);
 		Cpu *cpu;
 		Mmu *mmu;
 		Ppu *ppu;
