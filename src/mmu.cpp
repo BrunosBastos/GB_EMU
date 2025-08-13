@@ -2,6 +2,8 @@
 #include "mmu.h"
 #include <cstring>
 
+#include "debug_server.h"
+
 
 Mmu::Mmu(Cartridge *c) { 
 
@@ -133,8 +135,7 @@ byte Mmu::get_joypad_state() {
 void Mmu::write_memory(word addr, byte data) {
 
     #if DEBUG
-    if (addr == 0xDEF6 && data == 0x07) {
-    }
+    debug_log(2, "[MEM_WRITE]%04x : %02x\n", addr, data);
     #endif
 
     if ((addr >= 0x0000 && addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF)) {

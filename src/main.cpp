@@ -189,7 +189,12 @@ int main(int argc, char *argv[]) {
         }
         #endif
 
-        while (current_cycle < cycles_per_frame && running) {
+        while (
+            #if DEBUG == 0
+            current_cycle < cycles_per_frame &&
+            #endif
+            running
+        ) {
             emu->run();
             current_cycle += emu->cpu->last_clock;        
         }

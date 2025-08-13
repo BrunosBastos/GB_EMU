@@ -33,11 +33,11 @@ DebugServer::~DebugServer() {
     if (server_fd > 0) close(server_fd);
 }
 
-void DebugServer::send_message(const std::string& msg) {
+void DebugServer::send_message(int log_level, const std::string& msg) {
     if (client_fd == 0) {
         return;
     }
-    if (log_level > 0) {
+    if (this->log_level != 0 && this->log_level <= log_level) {
         send(client_fd, msg.c_str(), msg.size(), 0);
     }
 }
@@ -93,7 +93,7 @@ void DebugServer::handle_message(const std::string& msg) {
 
 #endif
 
-void debug_log(const char* fmt, ...) {
+void debug_log(int log_level, const char* fmt, ...) {
 #ifdef DEBUG
     if (!g_debugServer) return;
 
@@ -104,6 +104,6 @@ void debug_log(const char* fmt, ...) {
     vsnprintf(buffer, sizeof(buffer), fmt, args); // format the string
     va_end(args);
 
-    g_debugServer->send_message(buffer);
+    g_debugServer->send_message(log_level, buffer);
 #endif
 }

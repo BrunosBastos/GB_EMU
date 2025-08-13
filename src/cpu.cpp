@@ -6,8 +6,6 @@
 
 #include "debug_server.h"
 
-std::set<int> ops;
-std::set<int> ops_cb;
 
 Cpu::Cpu(Mmu* mmu) {
     this->mmu = mmu;
@@ -56,7 +54,7 @@ void Cpu::emulate_cycle() {
     // when there is a halt, it needs one cycle of delay. so things can only happen in the next cycle.
     // the current code, does that but has a big flaw. since we are checking for an halt by checking the last instruction
     // there is a possibility that the last instruction is part of an instruction (ex. 2 byte instruction) and the last pc
-    // is not really the thing that we are reading but the rest of an instruction. so for that we have to read the halt at the begginning
+    // is not really the thing that we are reading but the rest of an instruction. so for that we have to read the halt at the beginning
 
     pc++;
 
@@ -79,19 +77,13 @@ void Cpu::execute_opcode() {
     debug();
     #endif
 
-    if(opcode != 0xCB) {
-        ops.insert(opcode);
-    } else {
-        ops_cb.insert(mmu->read_memory(pc + 1));
-    }
-
     (*optable[opcode])(mmu, this);
 };
 
 
 void Cpu::debug() {
     n_op++;
-    debug_log("%d A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%04x PC:%04x PCMEM:%02x,%02x,%02x,%02x\n",
+    debug_log(1, "%d A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%04x PC:%04x PCMEM:%02x,%02x,%02x,%02x\n",
         n_op, reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L, sp, pc,
         mmu->read_memory(pc), mmu->read_memory(pc+1), mmu->read_memory(pc+2), mmu->read_memory(pc+3));
 };

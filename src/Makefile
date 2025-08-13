@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 CC = g++
-CFLAGS = -Wall -g
+CFLAGS = -w -g
 LDFLAGS = -lm
 OBJFILES = $(wildcard *.cpp)
 
