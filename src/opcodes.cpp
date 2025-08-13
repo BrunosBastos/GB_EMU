@@ -1030,35 +1030,35 @@ void op_87(Mmu* mmu, Cpu* cp) {
 };
 
 void op_88(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, cp->reg_B + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, cp->reg_B, cp->get_c_flag());
 };
 
 void op_89(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, cp->reg_C + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, cp->reg_C, cp->get_c_flag());
 };
 
 void op_8A(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, cp->reg_D + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, cp->reg_D, cp->get_c_flag());
 };
 
 void op_8B(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, cp->reg_E + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, cp->reg_E, cp->get_c_flag());
 };
 
 void op_8C(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, cp->reg_H + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, cp->reg_H, cp->get_c_flag());
 };
 
 void op_8D(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, cp->reg_L + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, cp->reg_L, cp->get_c_flag());
 };
 
 void op_8E(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()) + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()), cp->get_c_flag());
 };
 
 void op_8F(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, cp->reg_A + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, cp->reg_A, cp->get_c_flag());
 };
 
 void op_90(Mmu* mmu, Cpu* cp) {
@@ -1094,35 +1094,35 @@ void op_97(Mmu* mmu, Cpu* cp) {
 };
 
 void op_98(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, cp->reg_B + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, cp->reg_B,cp->get_c_flag());
 };
 
 void op_99(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, cp->reg_C + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, cp->reg_C,cp->get_c_flag());
 };
 
 void op_9A(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, cp->reg_D + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, cp->reg_D,cp->get_c_flag());
 };
 
 void op_9B(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, cp->reg_E + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, cp->reg_E,cp->get_c_flag());
 };
 
 void op_9C(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, cp->reg_H + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, cp->reg_H,cp->get_c_flag());
 };
 
 void op_9D(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, cp->reg_L + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, cp->reg_L,cp->get_c_flag());
 };
 
 void op_9E(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()) + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, mmu->read_memory(cp->reg_HL.get()),cp->get_c_flag());
 };
 
 void op_9F(Mmu* mmu, Cpu* cp) {
-    cp->sub8(&cp->reg_A, cp->reg_A + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, cp->reg_A, cp->get_c_flag());
 };
 
 void op_A0(Mmu* mmu, Cpu* cp) {
@@ -1337,7 +1337,7 @@ void op_CD(Mmu* mmu, Cpu* cp) {
 };
 
 void op_CE(Mmu* mmu, Cpu* cp) {
-    cp->add8(&cp->reg_A, mmu->read_memory(++cp->pc) + cp->get_c_flag());
+    cp->add8_carry(&cp->reg_A, mmu->read_memory(++cp->pc), cp->get_c_flag());
 }
 
 void op_CF(Mmu* mmu, Cpu* cp) {
@@ -1419,7 +1419,7 @@ void op_DC(Mmu* mmu, Cpu* cp) {
 
 void op_DE(Mmu* mmu, Cpu* cp) {
     // SBC N
-    cp->sub8(&cp->reg_A, mmu->read_memory(++cp->pc) + cp->get_c_flag());
+    cp->sub8_carry(&cp->reg_A, mmu->read_memory(++cp->pc), cp->get_c_flag());
 };
 
 void op_DF(Mmu* mmu, Cpu* cp) {

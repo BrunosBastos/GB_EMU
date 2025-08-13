@@ -4,6 +4,8 @@
 #include <set>
 #include <string>
 
+#include "debug_server.h"
+
 std::set<int> ops;
 std::set<int> ops_cb;
 
@@ -51,7 +53,7 @@ void Cpu::emulate_cycle() {
     execute_opcode();
     total_clock += last_clock;      // ig total_clock is not used but...
 
-    // when there is an halt, it needs one cycle of delay. so things can only happen in the next cycle.
+    // when there is a halt, it needs one cycle of delay. so things can only happen in the next cycle.
     // the current code, does that but has a big flaw. since we are checking for an halt by checking the last instruction
     // there is a possibility that the last instruction is part of an instruction (ex. 2 byte instruction) and the last pc
     // is not really the thing that we are reading but the rest of an instruction. so for that we have to read the halt at the begginning
@@ -88,8 +90,10 @@ void Cpu::execute_opcode() {
 
 
 void Cpu::debug() {
-    fprintf(this->debug_fp, "A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%04x PC:%04x PCMEM:%02x,%02x,%02x,%02x\n",
-        reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L, sp, pc, mmu->read_memory(pc), mmu->read_memory(pc+1), mmu->read_memory(pc+2), mmu->read_memory(pc+3));
+    n_op++;
+    debug_log("%d A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%04x PC:%04x PCMEM:%02x,%02x,%02x,%02x\n",
+        n_op, reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L, sp, pc,
+        mmu->read_memory(pc), mmu->read_memory(pc+1), mmu->read_memory(pc+2), mmu->read_memory(pc+3));
 };
 
 void Cpu::debug_tile_addr() {
@@ -280,6 +284,18 @@ void Cpu::add8(byte *op1, byte op2) {
     *op1 = res;
 };
 
+void Cpu::add8_carry(byte* op1, byte op2, byte carry_in) {
+    uint16_t sum = *op1 + op2 + carry_in;
+    byte res = sum & 0xFF;
+
+    set_z_flag(res == 0);
+    set_n_flag(0);
+    set_h_flag(((*op1 & 0x0F) + (op2 & 0x0F) + carry_in) > 0x0F);
+    set_c_flag(sum > 0xFF);
+
+    *op1 = res;
+}
+
 void Cpu::sub8(byte *op1, byte op2) {
     byte res = *op1 - op2;
 
@@ -290,6 +306,19 @@ void Cpu::sub8(byte *op1, byte op2) {
 
     *op1 = res;
 };
+
+void Cpu::sub8_carry(byte* op1, byte op2, byte carry_in) {
+    uint16_t borrow = carry_in;
+    uint16_t diff = (uint16_t)(*op1) - op2 - borrow;
+    byte res = diff & 0xFF;
+
+    set_z_flag(res == 0);
+    set_n_flag(1);
+    set_h_flag(((*op1 & 0x0F) < ((op2 & 0x0F) + borrow)));
+    set_c_flag(diff > 0xFF);
+
+    *op1 = res;
+}
 
 void Cpu::and8(byte *op1, byte op2) {
     byte res = *op1 & op2;

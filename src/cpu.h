@@ -76,7 +76,9 @@ class Cpu {
         void store_pc_stack();
         
         void add8(byte *op1, byte op2);
+        void add8_carry(byte* op1, byte op2, byte carry_in);
         void sub8(byte *op1, byte op2);
+        void sub8_carry(byte* op1, byte op2, byte carry_in);
         void and8(byte *op1, byte op2);
         void or8(byte *op1, byte op2);
         void xor8(byte *op1, byte op2);

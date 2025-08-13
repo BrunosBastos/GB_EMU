@@ -92,11 +92,11 @@ Mmu::Mmu(Cartridge *c) {
 };
 
 byte Mmu::read_memory(word addr) {
-#if DEBUG
+    #if DEBUG
     if (addr == 0xFF44) {
         return 0x90;
     }
-#endif
+    #endif
 
     // reading from rom bank
     if (addr >= 0x4000 && addr <= 0x7FFF) {
@@ -104,13 +104,14 @@ byte Mmu::read_memory(word addr) {
     }
 
     // reading from RAM Bank
-    else if (addr >= 0xA000 && addr <= 0xBFFF) {
+    if (addr >= 0xA000 && addr <= 0xBFFF) {
         return mbc->read(addr);
     }
 
     // joypad state
-    else if (addr == 0xFF00)
+    if (addr == 0xFF00) {
         return get_joypad_state();
+    }
 
     return address[addr];
 };
@@ -130,6 +131,11 @@ byte Mmu::get_joypad_state() {
 };
 
 void Mmu::write_memory(word addr, byte data) {
+
+    #if DEBUG
+    if (addr == 0xDEF6 && data == 0x07) {
+    }
+    #endif
 
     if ((addr >= 0x0000 && addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF)) {
         mbc->write(addr, data);

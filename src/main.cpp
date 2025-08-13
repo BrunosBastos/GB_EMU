@@ -4,6 +4,7 @@
 #include "cartridge.h"
 #include "cpu.h"
 #include "mmu.h"
+#include "debug_server.h"
 #include "opcodes.h"
 #include "ppu.h"
 #include "emulator.h"
@@ -148,19 +149,22 @@ void handle_input(Emulator* emu, SDL_Event event) {
 int main(int argc, char *argv[]) {
 
     #if DEBUG
-    std::cout << "Running in DEBUG mode" << std::endl;
+    std::cout << "[DEBUG] Running in DEBUG mode" << std::endl;
+    g_debugServer = new DebugServer(9000);
     #endif
 
-    std::string filename = "/cpu_instrs/cpu_instrs.gb";
+    std::string filename = "/cpu_instrs/individual/11-op a,(hl).gb";
     if (argc == 2) {
         filename = argv[1];
     }
 
-    std::cout << "Using Rom: " << filename << "\n";
-    filename = "../test/test_roms/" + filename;
+    std::cout << "[INFO] Using Rom: " << filename << "\n";
+    filename = "../roms/" + filename;
 
+    #if DEBUG == 0
     sdl_init();
     SDL_Event event;
+    #endif
 
     initialize_optable();
 
@@ -175,24 +179,26 @@ int main(int argc, char *argv[]) {
 		float time_between_frames = 1000 / framerate;
         int current_cycle = 0;
 
-
-        while (SDL_PollEvent(&event)) { 
+        #if DEBUG == 0
+        while (SDL_PollEvent(&event)) {
             handle_input(emu, event);
             if (event.type == SDL_QUIT) {
                 running = false;
                 exit(0);
             }
         }
+        #endif
 
         while (current_cycle < cycles_per_frame && running) {
             emu->run();
             current_cycle += emu->cpu->last_clock;        
         }
 
+        #if DEBUG == 0
         update_screen(emu->ppu);
+        #endif
 
         int endMs = SDL_GetTicks();
-        //printf("fps=%d\n", time_between_frames - endMs + startMs);
         int delay = time_between_frames - (endMs - startMs);
         if(delay > 0) {
             SDL_Delay(delay);
