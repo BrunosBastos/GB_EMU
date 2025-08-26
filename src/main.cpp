@@ -150,10 +150,10 @@ int main(int argc, char *argv[]) {
 
     #if DEBUG
     std::cout << "[DEBUG] Running in DEBUG mode" << std::endl;
-    g_debugServer = new DebugServer(9000);
+    //g_debugServer = new DebugServer(9000);
     #endif
 
-    std::string filename = "/cpu_instrs/individual/11-op a,(hl).gb";
+    std::string filename = "/cpu_instrs/cpu_instrs.gb";
     if (argc == 2) {
         filename = argv[1];
     }

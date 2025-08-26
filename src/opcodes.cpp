@@ -1552,7 +1552,7 @@ void op_CB(Mmu* mmu, Cpu* cp) {
     cp->last_clock = 3;		//CB takes 1 cycle and the others take 2 cycles
                             //unless it is a 16 bit operation in which the
                             // cycles are incremented in the functions
-    byte *preg; 
+    byte *preg = nullptr;
 
     switch (reg) {
         case 0: preg = &cp->reg_B; break;
@@ -1561,7 +1561,7 @@ void op_CB(Mmu* mmu, Cpu* cp) {
         case 3: preg = &cp->reg_E; break;
         case 4: preg = &cp->reg_H; break;
         case 5: preg = &cp->reg_L; break;
-        default: preg = &cp->reg_A; break;
+        case 7: preg = &cp->reg_A; break;
     }
 
     if (opcode >= 0xC0) {

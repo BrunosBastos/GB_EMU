@@ -66,33 +66,6 @@ class MemoryRegister {
 		void operator |= (byte value);
 };
 
-/*
-void set_bit(byte* target, byte bit, bool value) {
-	*target = (*target & ~(1 << bit)) | (value << bit);
-}
-bool get_bit(byte* target, byte bit) {
-	return *target & (1 << bit);
-}
-*/
 
 #endif
 
-/*
-
-2820-2828 loop cria tiles com numeros
-27f8-27fe loop cria resto dos tiles
-2800 acaba de criar tudo
-
-036c-036f desenha texto
-
-
-stat		pc
-85			100
-86			291
-87    		293
-84			293
-(82 83 80)	293
-
-3º 	 40		aparece letras
-130º 40 	comeca o jogo
-*/

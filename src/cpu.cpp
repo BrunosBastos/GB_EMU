@@ -83,6 +83,12 @@ void Cpu::execute_opcode() {
 
 void Cpu::debug() {
     n_op++;
+
+    fprintf(this->debug_fp,"A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%04x PC:%04x PCMEM:%02x,%02x,%02x,%02x\n",
+        reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L, sp, pc,
+        mmu->read_memory(pc), mmu->read_memory(pc+1), mmu->read_memory(pc+2), mmu->read_memory(pc+3)
+    );
+
     debug_log(1, "%d A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%04x PC:%04x PCMEM:%02x,%02x,%02x,%02x\n",
         n_op, reg_A, reg_F, reg_B, reg_C, reg_D, reg_E, reg_H, reg_L, sp, pc,
         mmu->read_memory(pc), mmu->read_memory(pc+1), mmu->read_memory(pc+2), mmu->read_memory(pc+3));
@@ -136,12 +142,15 @@ void Cpu::swap8(byte *reg_8) {
 };
 
 void Cpu::swap16(PairRegister *reg_16) {
-    byte temp = reg_16->low();
+    byte value = mmu->read_memory(reg_16->get());
 
-    reg_16->low(reg_16->high());
-    reg_16->high(temp);
+    byte high = (value & 0xF0) >> 4;
+    byte low  = (value & 0x0F) << 4;
 
-    set_z_flag(reg_16->get() == 0);
+    value = high | low;
+    mmu->write_memory(reg_16->get(), value);
+
+    set_z_flag(value == 0);
     set_n_flag(0);
     set_h_flag(0);
     set_c_flag(0);
@@ -382,32 +391,30 @@ void Cpu::add16(PairRegister *op1, word op2) {
 
 
 void Cpu::rl16(PairRegister *reg_16) {
-    byte carry = get_c_flag();
     byte value = mmu->read_memory(reg_16->get());
+    byte old_carry = get_c_flag();
+    byte old_bit7 = (value >> 7) & 0x01;
 
-    set_n_flag(0);
-    set_h_flag(0);
-    set_c_flag(value & (1 << 7));
-
-    value = (value << 1) | carry;
+    value = (value << 1) | old_carry;
 
     set_z_flag(value == 0);
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(old_bit7);
 
     mmu->write_memory(reg_16->get(), value);
 };
 
 void Cpu::rlc16(PairRegister *reg_16) {
-    // rotates reg_8 to the left with bit 7 being moved to bit 0 and
-    // also stored in the carry
     byte value = mmu->read_memory(reg_16->get());
+    byte old_bit7 = (value >> 7) & 0x01;
 
-    byte carry = (value & (1 << 7)) >> 7;
-    value = (value << 1) | carry;
+    value = (value << 1) | old_bit7;
 
     set_z_flag(value == 0);
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag(carry);
+    set_c_flag(old_bit7);
 
     mmu->write_memory(reg_16->get(), value);
 };
@@ -415,29 +422,30 @@ void Cpu::rlc16(PairRegister *reg_16) {
 void Cpu::rrc16(PairRegister *reg_16) {
     byte value = mmu->read_memory(reg_16->get());
 
-    set_h_flag(0);
-    set_n_flag(0);
-    set_c_flag(value & 0x01);
-
-    byte carry = get_c_flag();
-    value = (value >> 1) | (carry << 7);
+    byte old_bit0 = value & 0x01;
+    value >>= 1;
+    value |= (old_bit0 << 7);
 
     set_z_flag(value == 0);
-    
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(old_bit0);
+
     mmu->write_memory(reg_16->get(), value);
 };
 
 void Cpu::rr16(PairRegister *reg_16) {
     byte value = mmu->read_memory(reg_16->get());
+    byte old_carry = get_c_flag();
+    byte old_bit0  = value & 0x01;
 
-    set_n_flag(0);
-    set_h_flag(0);
-    set_c_flag(value & 0x01);
-
-    byte carry = get_c_flag();
-    value = (value >> 1) | (carry << 7);
+    value >>= 1;
+    value |= (old_carry << 7);
 
     set_z_flag(value == 0);
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(old_bit0);
 
     mmu->write_memory(reg_16->get(), value);
 };
@@ -445,29 +453,31 @@ void Cpu::rr16(PairRegister *reg_16) {
 void Cpu::sla16(PairRegister *reg_16) {
     byte value = mmu->read_memory(reg_16->get());
 
-    set_n_flag(0);
-    set_h_flag(0);
-    set_c_flag((value & 0x80) >> 7);
+    byte old_bit7 = (value & 0x80) >> 7;
 
     value <<= 1;
 
     set_z_flag(value == 0);
-    
+    set_n_flag(0);
+    set_h_flag(0);
+    set_c_flag(old_bit7);
+
     mmu->write_memory(reg_16->get(), value);
 };
 
 void Cpu::sra16(PairRegister *reg_16) {
     byte value = mmu->read_memory(reg_16->get());
-    
+
+    byte old_bit0 = value & 0x01;
+    byte old_bit7 = value & 0x80;
+
+    value >>= 1;
+    value |= old_bit7;
+
+    set_z_flag(value == 0);
     set_n_flag(0);
     set_h_flag(0);
-    set_c_flag(value & 0x01);
-
-    byte last_bit = value & 0x80;
-    value >>= 1;
-    value |= last_bit;
-    
-    set_z_flag(value == 0);
+    set_c_flag(old_bit0);
 
     mmu->write_memory(reg_16->get(), value);
 };

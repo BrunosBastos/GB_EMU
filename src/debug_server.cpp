@@ -95,6 +95,9 @@ void DebugServer::handle_message(const std::string& msg) {
 
 void debug_log(int log_level, const char* fmt, ...) {
 #ifdef DEBUG
+
+
+
     if (!g_debugServer) return;
 
     char buffer[512];
