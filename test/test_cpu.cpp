@@ -10,7 +10,7 @@ public:
     Cpu *cpu;
 
     void SetUp() override {
-        c = new Cartridge("/mnt/c/Users/Utilizador/Desktop/projects/GB_EMU/test/test_roms/cpu_instrs/cpu_instrs.gb");
+        c = new Cartridge("/mnt/c/Users/Utilizador/Desktop/projects/GB_EMU/roms/cpu_instrs/cpu_instrs.gb");
         mmu = new Mmu(c);
         cpu = new Cpu(mmu);
     }

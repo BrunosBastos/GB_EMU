@@ -168,15 +168,15 @@ int main(int argc, char *argv[]) {
 
     initialize_optable();
 
-    Emulator *emu = new Emulator(&filename);
+    const auto emu = new Emulator(&filename);
    
     bool running = true;
     while (running) {
-        int startMs = SDL_GetTicks();
+        const int startMs = SDL_GetTicks();
 
-        int framerate = 60;
-        float cycles_per_frame = emu->clock_speed / framerate;
-		float time_between_frames = 1000 / framerate;
+        constexpr int framerate = 60;
+        const float cycles_per_frame = emu->clock_speed / framerate;
+        constexpr float time_between_frames = 1000 / framerate;
         int current_cycle = 0;
 
         #if DEBUG == 0
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
         update_screen(emu->ppu);
         #endif
 
-        int endMs = SDL_GetTicks();
+        const int endMs = SDL_GetTicks();
         int delay = time_between_frames - (endMs - startMs);
         if(delay > 0) {
             SDL_Delay(delay);

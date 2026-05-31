@@ -7,7 +7,7 @@ public:
     std::string filename;
 
     void SetUp() override {
-        filename = "/mnt/c/Users/Utilizador/Desktop/projects/GB_EMU/test/test_roms/cpu_instrs/cpu_instrs.gb";
+        filename = "/mnt/c/Users/Utilizador/Desktop/projects/GB_EMU/roms/cpu_instrs/cpu_instrs.gb";
         emulator = new Emulator(&filename);
     }
 

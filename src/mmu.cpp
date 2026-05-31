@@ -100,8 +100,13 @@ byte Mmu::read_memory(word addr) {
     }
     #endif
 
+    /*
+     * Bank 0 is technically fixed in most games, many emulators load the entire ROM into the MBC class.
+     * Furthermore, some obscure MBCs actually do bankswitch the 0x0000 - 0x3FFF region.
+     * It is much safer to let the MBC handle all ROM reads.
+    */
     // reading from rom bank
-    if (addr >= 0x4000 && addr <= 0x7FFF) {
+    if (addr >= 0x0000 && addr <= 0x7FFF) {
         return mbc->read(addr);
     }
 
@@ -114,6 +119,10 @@ byte Mmu::read_memory(word addr) {
     if (addr == 0xFF00) {
         return get_joypad_state();
     }
+
+    if (addr == 0xFF04) return DIV.get();
+    if (addr == 0xFF05) return TIMA.get();
+    if (addr == 0xFF44) return LY.get();
 
     return address[addr];
 };
@@ -129,7 +138,9 @@ byte Mmu::get_joypad_state() {
     else if (!(res & (1 << 4))) {
         res &= (joypad_state & 0xF) | 0xF0;
     }
-    return res;
+
+    // joypad bits 6 and 7 always return 1
+    return res | 0xC0;
 };
 
 void Mmu::write_memory(word addr, byte data) {
@@ -142,7 +153,7 @@ void Mmu::write_memory(word addr, byte data) {
         mbc->write(addr, data);
     }
     // internal ram
-    else if ((addr >= 0xC000) && (addr <= 0xDE00)) {
+    else if ((addr >= 0xC000) && (addr <= 0xDDFF)) {
         address[addr] = data;
         address[addr + 0x2000] = data;
     }
@@ -179,6 +190,11 @@ void Mmu::write_memory(word addr, byte data) {
     else if (addr == 0xFF45) {
         LYC.set(data);
     }
+
+    /*
+    DMA logic uses an instantaneous for loop to copy the memory.
+    On real hardware, a DMA transfer takes 160 machine cycles to complete, during which the CPU can only access HRAM.
+    */
     // DMA transfer
     else if (addr == 0xFF46) {
         DMA.set(data);

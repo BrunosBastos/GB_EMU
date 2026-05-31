@@ -2,6 +2,7 @@
 #define TESTS_H
 
 #include <gtest/gtest.h>
+#include "../src/debug_server.cpp"
 #include "../src/emulator.h"
 #include "../src/cartridge.cpp"
 #include "../src/mmu.cpp"

@@ -2,6 +2,7 @@
 
 #include "test_opcodes.cpp"
 #include "test_cpu.cpp"
+#include "test_mmu.cpp"
 
 #include <gtest/gtest.h>
 
